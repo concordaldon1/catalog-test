@@ -19,6 +19,7 @@ import io
 import shutil
 import subprocess
 import sys
+import os
 from datetime import datetime
 from pathlib import Path
 
@@ -33,6 +34,45 @@ KEEP = [
 ]
 SPECIAL_STYLES = {"SILVER", "GOLD"}
 MINIMUM_ROWS = 1  # Never publish an empty inventory.
+GIT_EXE: str | None = None
+
+
+def find_git() -> str:
+    """Find Git on PATH or use the copy bundled with GitHub Desktop."""
+    on_path = shutil.which("git")
+    if on_path:
+        return on_path
+
+    roots = []
+    local_app_data = os.environ.get("LOCALAPPDATA")
+    if local_app_data:
+        roots.append(Path(local_app_data) / "GitHubDesktop")
+    roots.extend([
+        Path.home() / "AppData" / "Local" / "GitHubDesktop",
+        Path(os.environ.get("PROGRAMFILES", r"C:\Program Files")) / "GitHub Desktop",
+        Path(os.environ.get("PROGRAMFILES(X86)", r"C:\Program Files (x86)")) / "GitHub Desktop",
+    ])
+
+    candidates = []
+    for root in roots:
+        if root.exists():
+            for pattern in (
+                "app-*/resources/app/git/cmd/git.exe",
+                "app-*/resources/app/git/mingw64/bin/git.exe",
+                "app-*/resources/app/git/bin/git.exe",
+                "resources/app/git/cmd/git.exe",
+            ):
+                candidates.extend(root.glob(pattern))
+
+    candidates = [p for p in candidates if p.is_file()]
+    if candidates:
+        # The newest versioned GitHub Desktop installation is normally the best choice.
+        return str(max(candidates, key=lambda p: p.stat().st_mtime))
+
+    stop(
+        "Could not find Git. GitHub Desktop should include it; make sure GitHub Desktop "
+        "is installed, then reopen it and try again."
+    )
 
 
 def stop(message: str, code: int = 1) -> None:
@@ -41,8 +81,11 @@ def stop(message: str, code: int = 1) -> None:
 
 
 def run_git(repo: Path, *args: str, check: bool = True) -> subprocess.CompletedProcess:
+    global GIT_EXE
+    if GIT_EXE is None:
+        GIT_EXE = find_git()
     result = subprocess.run(
-        ["git", *args],
+        [GIT_EXE, *args],
         cwd=repo,
         text=True,
         capture_output=True,
@@ -156,6 +199,9 @@ def main() -> None:
 
     if not (repo / ".git").exists():
         stop("This updater must be placed in the root of the catalog-test Git repository.")
+
+    GIT_EXE = find_git()
+    print(f"Git found: {GIT_EXE}")
 
     branch = run_git(repo, "branch", "--show-current").stdout.strip()
     if branch != "main":

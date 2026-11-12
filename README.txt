@@ -47,7 +47,7 @@ REQUIREMENTS
 ------------
 - Windows
 - Python 3 installed
-- Git installed (GitHub Desktop normally installs Git)
+- GitHub Desktop installed (the updater automatically looks for its bundled Git; a separate Git installation is not required)
 - This folder must be a working clone of the catalog-test repository
 - GitHub Desktop must have authenticated the GitHub account on that computer
 - The local repository must be on the main branch
