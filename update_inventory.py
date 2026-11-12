@@ -23,13 +23,16 @@ import os
 from datetime import datetime
 from pathlib import Path
 
-KEEP = [
-    "Roll #",
-    "Style",
-    "Color",
-    "Width",
-    "Amt Avail",
+# Catalog columns and their matching RFMS export headers.
+# Style Number and Color Number are not present in this RFMS export.
+COLUMN_MAP = [
+    ("Roll Number", "Roll #"),
+    ("Style", "Style"),
+    ("Color", "Color"),
+    ("Width", "Width"),
+    ("Amt Avail", "Qty Avail"),
 ]
+OUTPUT_HEADERS = [catalog_name for catalog_name, _ in COLUMN_MAP]
 SPECIAL_STYLES = {"SILVER", "GOLD"}
 MINIMUM_ROWS = 1  # Never publish an empty inventory.
 GIT_EXE: str | None = None
@@ -111,7 +114,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     first = content.split("\n", 1)[0]
     delimiter = "\t" if first.count("\t") >= first.count(",") else ","
 
-    wanted = [name.lower() for name in KEEP]
+    wanted = [rfms_name.lower() for _, rfms_name in COLUMN_MAP]
     indexes = None
     output_rows = []
     counts = {"SILVER": 0, "GOLD": 0, "Z-prefixed": 0}
@@ -121,11 +124,11 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
         cells = [cell.strip() for cell in row]
         lowered = [cell.lower() for cell in cells]
 
-        if "roll number" in lowered:
+        if "roll #" in lowered:
             if indexes is None:
-                missing = [name for name in KEEP if name.lower() not in lowered]
+                missing = [rfms_name for _, rfms_name in COLUMN_MAP if rfms_name.lower() not in lowered]
                 if missing:
-                    stop("Required columns missing from RFMS export: " + ", ".join(missing))
+                    stop("Required RFMS columns missing from export: " + ", ".join(missing))
                 indexes = [lowered.index(name) for name in wanted]
             continue
 
@@ -146,13 +149,13 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
         output_rows.append(selected)
 
     if indexes is None:
-        stop("Could not find a header row containing 'Roll Number'.")
+        stop("Could not find a header row containing 'Roll #'. Check that this is the RFMS export.")
     if len(output_rows) < MINIMUM_ROWS:
         stop("The filtered inventory contains no rows. The live inventory was not changed.")
 
     # Require roll numbers and numeric available amounts on every retained row.
-    roll_index = KEEP.index("Roll Number")
-    avail_index = KEEP.index("Amt Avail")
+    roll_index = OUTPUT_HEADERS.index("Roll Number")
+    avail_index = OUTPUT_HEADERS.index("Amt Avail")
     bad_rolls = sum(1 for row in output_rows if not row[roll_index].strip())
     if bad_rolls:
         stop(f"{bad_rolls} included row(s) have a blank Roll Number.")
@@ -170,7 +173,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
 
     with destination.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.writer(handle)
-        writer.writerow(KEEP)
+        writer.writerow(OUTPUT_HEADERS)
         writer.writerows(output_rows)
 
     return len(output_rows), counts, excluded

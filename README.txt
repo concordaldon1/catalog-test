@@ -8,10 +8,15 @@ and double-click "Update Inventory.bat".
 
 The updater:
 - Uses the newest CSV file in incoming.
-- Keeps the catalog columns:
-  Roll Number, Style, Style Number, Color, Color Number, Width, Amt Avail
+- Maps the RFMS export columns into the five catalog columns:
+  Roll # -> Roll Number
+  Style -> Style
+  Color -> Color
+  Width -> Width
+  Qty Avail -> Amt Avail
+- Does not require Style Number or Color Number; they are not in this RFMS export.
 - Keeps rows where Style is exactly SILVER or GOLD, or begins with Z.
-- Checks for required columns, blank roll numbers, and invalid available amounts.
+- Checks for the five required RFMS columns, blank roll numbers, and invalid Qty Avail values.
 - Warns and asks for confirmation if the new result is less than half the current size.
 - Backs up the previous inventory.csv.
 - Commits only inventory.csv and pushes to origin/main.
