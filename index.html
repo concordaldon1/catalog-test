@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Roll Inventory</title>
+<style>
+:root{--bg:#f3f5f4;--card:#fff;--ink:#1c2a2a;--mute:#5d6c6b;--line:#d9e0de;--accent:#0f5c57;--accent2:#e4efed;--bad:#9b2c2c}
+@media (prefers-color-scheme:dark){:root{--bg:#121a1a;--card:#1a2424;--ink:#e8efee;--mute:#9bb0ae;--line:#2c3a3a;--accent:#59c2b9;--accent2:#1f3533;--bad:#f28b8b}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 14px}
+h1{margin:0 0 8px;font-size:20px;font-weight:700}
+.bar{display:flex;gap:8px;flex-wrap:wrap}
+input,select,button{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
+input[type=search]{flex:1 1 200px;min-width:0}
+button{cursor:pointer;background:var(--accent);color:#fff;border-color:var(--accent)}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.sum{margin:6px 0 0;color:var(--mute);font-size:14px}
+main{max-width:900px;margin:0 auto;padding:12px}
+.grp{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
+.top{display:flex;gap:12px;padding:12px;align-items:center}
+.ph{width:96px;height:96px;flex:none;border-radius:6px;background:var(--accent2);object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center}
+.top h2{margin:0;font-size:18px}
+.meta{color:var(--mute);font-size:14px}
+.tot{margin-left:auto;text-align:right;white-space:nowrap}
+.tot b{display:block;font-size:22px;color:var(--accent)}
+details{border-top:1px solid var(--line)}
+summary{padding:10px 12px;cursor:pointer;color:var(--accent);font-weight:600}
+table{width:100%;border-collapse:collapse}
+td,th{padding:8px 12px;text-align:left;border-top:1px solid var(--line)}
+th{font-size:13px;color:var(--mute);font-weight:600}
+td:last-child,th:last-child{text-align:right}
+.msg{padding:20px;text-align:center;color:var(--mute)}
+.err{color:var(--bad)}
+img.ph{cursor:zoom-in}
+#lb{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;cursor:zoom-out}
+#lb[hidden]{display:none}
+#lbimg{max-width:96vw;max-height:84vh;object-fit:contain;border-radius:6px}
+#lbcap{color:#fff;font-size:16px;text-align:center}
+#lbx{position:absolute;top:10px;right:12px;font-size:22px;line-height:1;padding:8px 12px;background:rgba(255,255,255,.15);border-color:transparent}
+@media(max-width:480px){.ph{width:72px;height:72px}.tot b{font-size:19px}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Roll Inventory</h1>
+  <div class="bar">
+    <input id="q" type="search" placeholder="Search style, color, or roll number" aria-label="Search">
+    <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
+    <select id="sort" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
+  </div>
+  <p class="sum" id="sum"></p>
+</header>
+<main id="out"><p class="msg">Loading inventory…</p></main>
+
+<div id="lb" hidden role="dialog" aria-modal="true" aria-label="Enlarged photo">
+  <button id="lbx" aria-label="Close">&times;</button>
+  <img id="lbimg" alt="">
+  <div id="lbcap"></div>
+</div>
+
+<script>
+// Settings: change these if your file or folder names differ.
+var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_EXT = ['jpg','jpeg','png','webp'];
+var PAGE_SIZE = 20;   // style/color entries shown at a time
+var rows = [], shown = PAGE_SIZE;
+
+function parse(text){
+  text = text.replace(/^\uFEFF/, '');
+  var first = text.split(/\r?\n/)[0];
+  var d = (first.match(/\t/g)||[]).length >= (first.match(/,/g)||[]).length ? '\t' : ',';
+  var out = [], row = [], cur = '', q = false;
+  for (var i = 0; i < text.length; i++){
+    var c = text[i];
+    if (q){ if (c === '"'){ if (text[i+1] === '"'){cur += '"'; i++;} else q = false; } else cur += c; }
+    else if (c === '"') q = true;
+    else if (c === d){ row.push(cur); cur = ''; }
+    else if (c === '\n' || c === '\r'){ if (c === '\r' && text[i+1] === '\n') i++; row.push(cur); out.push(row); row = []; cur = ''; }
+    else cur += c;
+  }
+  if (cur || row.length){ row.push(cur); out.push(row); }
+  return out;
+}
+
+function load(text){
+  var t = parse(text), seen = {}, data = [];
+  var head = null;
+  t.forEach(function(r){
+    var low = r.map(function(x){return x.trim().toLowerCase();});
+    if (low.indexOf('roll number') > -1){ head = low; return; }   // handles repeated header rows
+    if (!head || r.join('').trim() === '') return;
+    function g(n){ var i = head.indexOf(n); return i > -1 ? (r[i]||'').trim() : ''; }
+    var avail = parseFloat(g('amt avail').replace(/,/g,''));
+    if (!(avail > 0) || !g('roll number')) return;
+    var k = g('roll number'); if (seen[k]) return; seen[k] = 1;
+    data.push({roll:k, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), avail:avail});
+  });
+  rows = data;
+  var sel = document.getElementById('sty'), names = {};
+  data.forEach(function(r){ names[r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : '')] = 1; });
+  sel.innerHTML = '<option value="">All styles</option>' + Object.keys(names).sort().map(function(n){return '<option>' + esc(n) + '</option>';}).join('');
+  render();
+}
+
+function esc(s){ return String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function fmt(n){ return n.toLocaleString(undefined,{maximumFractionDigits:2}); }
+function colorLabel(r){ return r.color && r.cn && r.color !== r.cn ? r.color + ' (' + r.cn + ')' : (r.color || r.cn); }
+function styleLabel(r){ return r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : ''); }
+
+function render(){
+  var q = document.getElementById('q').value.trim().toLowerCase();
+  var sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
+  var groups = {};
+  rows.forEach(function(r){
+    if (sty && styleLabel(r) !== sty) return;
+    var hay = (styleLabel(r) + ' ' + colorLabel(r)).toLowerCase();
+    if (q && !q.split(/\s+/).every(function(t){ return hay.indexOf(t) > -1; })) return;
+    var k = [r.sn || r.style, r.cn || r.color, r.width].join('|');
+    (groups[k] = groups[k] || {r:r, rolls:[], total:0});
+    groups[k].rolls.push(r); groups[k].total += r.avail;
+  });
+  var list = Object.keys(groups).map(function(k){return groups[k];});
+  list.sort(function(a,b){
+    if (sort === 'most') return b.total - a.total;
+    return (styleLabel(a.r) + colorLabel(a.r)).localeCompare(styleLabel(b.r) + colorLabel(b.r), undefined, {numeric:true});
+  });
+  var all = 0, n = 0; list.forEach(function(g){ all += g.total; n += g.rolls.length; });
+  document.getElementById('sum').textContent = n + ' rolls, ' + fmt(all) + ' ft in stock';
+  var out = document.getElementById('out');
+  if (!list.length){ out.innerHTML = '<p class="msg">No rolls match your search.</p>'; return; }
+  out.innerHTML = list.slice(0, shown).map(function(g, i){
+    var r = g.r;
+    g.rolls.sort(function(a,b){return b.avail - a.avail;});
+    return '<section class="grp"><div class="top">' +
+      '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn || r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
+      '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
+      '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
+      '<div class="tot"><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
+      '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
+      g.rolls.map(function(x){return '<tr><td>' + esc(x.roll) + '</td><td>' + fmt(x.avail) + '</td></tr>';}).join('') +
+      '</tbody></table></details></section>';
+  }).join('') + (list.length > shown ? '<p class="msg"><button id="more">Show more (' + (list.length - shown) + ' remaining)</button></p>' : '');
+  var mb = document.getElementById('more');
+  if (mb) mb.onclick = function(){ shown += PAGE_SIZE; render(); };
+  Array.prototype.forEach.call(out.querySelectorAll('img.ph'), function(img){
+    var s = img.dataset.s, c = img.dataset.c, n = img.dataset.n, names = [];
+    // Photo names tried in order, e.g. BEAR_121.jpg, BEAR-121.jpg, BEAR 121.jpg, BEAR_MILLSTONE.jpg ... then BEAR.jpg
+    [c, n].forEach(function(x){ if (x) ['_', '-', ' '].forEach(function(sep){ names.push(s + sep + x); }); });
+    names.push(s);
+    var tries = []; names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ tries.push(nm + '.' + e); }); });
+    function next(){
+      var i = +img.dataset.i;
+      if (i >= tries.length){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); return; }
+      img.dataset.i = i + 1; img.src = PHOTO_DIR + encodeURIComponent(tries[i]);
+    }
+    img.onerror = next; next();
+  });
+}
+
+['q','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
+document.getElementById('q').placeholder = 'Search style or color';
+
+function fallback(){
+  document.getElementById('out').innerHTML =
+    '<p class="msg err">The inventory is unavailable right now. Please try again in a few minutes.</p>';
+}
+
+
+var lb = document.getElementById('lb'), lbImg = document.getElementById('lbimg'), lbCap = document.getElementById('lbcap'), lastFocus = null;
+function openLb(img){ lbImg.src = img.currentSrc || img.src; lbCap.textContent = img.dataset.t || ''; lastFocus = img; lb.hidden = false; document.getElementById('lbx').focus(); }
+function closeLb(){ lb.hidden = true; lbImg.removeAttribute('src'); if (lastFocus && document.contains(lastFocus)) lastFocus.focus(); }
+function isPhoto(el){ return el && el.tagName === 'IMG' && el.classList.contains('ph'); }
+var outEl = document.getElementById('out');
+outEl.addEventListener('click', function(e){ if (isPhoto(e.target)) openLb(e.target); });
+outEl.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && isPhoto(e.target)){ e.preventDefault(); openLb(e.target); } });
+lb.addEventListener('click', closeLb);
+document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !lb.hidden) closeLb(); });
+
+fetch(CSV_FILE + '?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
+</script>
+</body>
+</html>
