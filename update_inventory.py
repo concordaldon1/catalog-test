@@ -24,11 +24,9 @@ from datetime import datetime
 from pathlib import Path
 
 KEEP = [
-    "Roll Number",
+    "Roll #",
     "Style",
-    "Style Number",
     "Color",
-    "Color Number",
     "Width",
     "Amt Avail",
 ]
