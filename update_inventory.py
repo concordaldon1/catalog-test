@@ -262,29 +262,40 @@ def main() -> None:
 
     # Stage and commit only inventory.csv; other un-staged files are not included.
     run_git(repo, "add", "--", "inventory.csv")
-    run_git(repo, "commit", "-m", f"Update inventory {timestamp}")
+    staged_inventory = run_git(repo, "diff", "--cached", "--quiet", "--", "inventory.csv", check=False)
 
-    print("\nUploading inventory to GitHub main...")
-    push = run_git(repo, "push", "origin", "main", check=False)
-    if push.returncode != 0:
-        details = push.stderr.strip() or push.stdout.strip()
-        print("\nThe inventory was processed and committed locally, but the push failed.")
-        print("Your previous inventory backup is in inventory_backups.")
-        print("Open GitHub Desktop, sign in if prompted, and click Push origin.")
-        print(f"\nGit message:\n{details}")
-        raise SystemExit(2)
+    if staged_inventory.returncode == 0:
+        # RFMS export produced the exact same catalog file. This is a successful
+        # no-op: do not attempt an empty Git commit, but still archive the export.
+        print("\nNo inventory changes detected. The live catalog already matches this RFMS export.")
+    else:
+        run_git(repo, "commit", "-m", f"Update inventory {timestamp}")
 
-    # Archive the source export only after a successful push.
+        print("\nUploading inventory to GitHub main...")
+        push = run_git(repo, "push", "origin", "main", check=False)
+        if push.returncode != 0:
+            details = push.stderr.strip() or push.stdout.strip()
+            print("\nThe inventory was processed and committed locally, but the push failed.")
+            print("Your previous inventory backup is in inventory_backups.")
+            print("Open GitHub Desktop, sign in if prompted, and click Push origin.")
+            print(f"\nGit message:\n{details}")
+            raise SystemExit(2)
+
+    # Archive the source export after a successful push or a verified no-change run.
     processed.mkdir(parents=True, exist_ok=True)
     archive_target = processed / source.name
     if archive_target.exists():
         archive_target = processed / f"{source.stem}_{timestamp}{source.suffix}"
     shutil.move(str(source), str(archive_target))
 
-    print("\nSUCCESS: The live catalog inventory has been updated.")
+    if staged_inventory.returncode == 0:
+        print("\nSUCCESS: No publishing was necessary; the live catalog is already up to date.")
+    else:
+        print("\nSUCCESS: The live catalog inventory has been updated.")
     print("The RFMS export was archived in incoming\\processed.")
     print("A backup of the previous inventory is in inventory_backups.")
-    print("Allow a minute or two for the website to refresh.")
+    if staged_inventory.returncode != 0:
+        print("Allow a minute or two for the website to refresh.")
 
 
 if __name__ == "__main__":
