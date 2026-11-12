@@ -133,7 +133,7 @@ function render(){
     var r = g.r;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
-      '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn || r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
+      '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
       '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
       '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
       '<div class="tot"><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
@@ -144,10 +144,18 @@ function render(){
   var mb = document.getElementById('more');
   if (mb) mb.onclick = function(){ shown += PAGE_SIZE; render(); };
   Array.prototype.forEach.call(out.querySelectorAll('img.ph'), function(img){
-    var s = img.dataset.s, c = img.dataset.c, n = img.dataset.n, names = [];
-    // Photo names tried in order, e.g. BEAR_121.jpg, BEAR-121.jpg, BEAR 121.jpg, BEAR_MILLSTONE.jpg ... then BEAR.jpg
-    [c, n].forEach(function(x){ if (x) ['_', '-', ' '].forEach(function(sep){ names.push(s + sep + x); }); });
-    names.push(s);
+    var s = img.dataset.s, st = img.dataset.style;
+    var c = img.dataset.c, n = img.dataset.n, names = [];
+    // Try both Style Number and Style as photo filename prefixes.
+    [s, st].forEach(function(prefix){
+      if (!prefix) return;
+      [c, n].forEach(function(x){
+        if (x) ['_', '-', ' '].forEach(function(sep){
+          names.push(prefix + sep + x);
+        });
+      });
+      names.push(prefix);
+    });
     var tries = []; names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ tries.push(nm + '.' + e); }); });
     function next(){
       var i = +img.dataset.i;
