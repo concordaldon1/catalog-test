@@ -66,9 +66,13 @@ img.ph{cursor:zoom-in}
 
 <script>
 // Settings: change these if your file or folder names differ.
-var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_EXT = ['jpg','jpeg','png','webp'];
+var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_MANIFEST = 'photos/manifest.json', PHOTO_EXT = ['jpg','jpeg','png','webp'];
 var PAGE_SIZE = 20;   // style/color entries shown at a time
 var rows = [], shown = PAGE_SIZE;
+var photoFiles = new Set(), searchTimer = null;
+var photoObserver = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){ if (entry.isIntersecting){ photoObserver.unobserve(entry.target); loadPhoto(entry.target); } });
+}, {rootMargin:'250px 0px'}) : null;
 
 function parse(text){
   text = text.replace(/^\uFEFF/, '');
@@ -143,7 +147,7 @@ function render(){
     var r = g.r;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
-      '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
+      '<img class="ph" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
       '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
       '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
       '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
@@ -154,6 +158,11 @@ function render(){
   var mb = document.getElementById('more');
   if (mb) mb.onclick = function(){ shown += PAGE_SIZE; render(); };
   Array.prototype.forEach.call(out.querySelectorAll('img.ph'), function(img){
+    if (photoObserver) photoObserver.observe(img); else loadPhoto(img);
+  });
+}
+
+function loadPhoto(img){
     var s = img.dataset.s, st = img.dataset.style;
     var c = img.dataset.c, n = img.dataset.n, names = [];
     // Try both Style Number and Style as photo filename prefixes.
@@ -166,17 +175,22 @@ function render(){
       });
       names.push(prefix);
     });
-    var tries = []; names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ tries.push(nm + '.' + e); }); });
+    var tries = [], seen = {};
+    names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ var file = nm + '.' + e; if (photoFiles.has(file) && !seen[file]){ seen[file] = true; tries.push(file); } }); });
     function next(){
       var i = +img.dataset.i;
       if (i >= tries.length){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); return; }
       img.dataset.i = i + 1; img.src = PHOTO_DIR + encodeURIComponent(tries[i]);
     }
     img.onerror = next; next();
-  });
 }
 
-['q','typ','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
+function scheduleSearch(){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function(){ shown = PAGE_SIZE; render(); }, 250);
+}
+document.getElementById('q').addEventListener('input', scheduleSearch);
+['typ','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
 document.getElementById('q').placeholder = 'Search style or color';
 
 function fallback(){
@@ -210,7 +224,12 @@ fetch('inventory_date.txt?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0
   var el = document.getElementById('asof'); el.textContent = 'Inventory date unavailable'; el.classList.add('warn');
 });
 
-fetch(CSV_FILE + '?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
+fetch(PHOTO_MANIFEST).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(files){
+  if (!Array.isArray(files)) throw 0;
+  photoFiles = new Set(files);
+}).catch(function(){ photoFiles = new Set(); }).then(function(){
+  return fetch(CSV_FILE, {cache:'no-cache'}).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
+});
 </script>
 </body>
 </html>
