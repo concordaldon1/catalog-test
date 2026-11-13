@@ -6,9 +6,10 @@ Workflow:
   1. Put the RFMS CSV export in the "incoming" folder.
   2. Double-click "Update Inventory.bat".
   3. This script filters the export, validates it, updates inventory.csv,
-     commits only inventory.csv, and pushes to origin/main.
+     updates inventory.csv and inventory_date.txt, commits them, and pushes to origin/main.
 
-Included styles: Style is exactly SILVER or GOLD, or begins with Z.
+Included styles: Style is exactly SILVER or GOLD, or is a 4-character Z style
+(Z plus three letters/digits, like ZG91). Longer styles such as "ZG91 A1C2" are left out.
 The source RFMS export is never modified.
 """
 
@@ -16,6 +17,7 @@ from __future__ import annotations
 
 import csv
 import io
+import re
 import shutil
 import subprocess
 import sys
@@ -32,7 +34,11 @@ COLUMN_MAP = [
     ("Width", "Width"),
     ("Amt Avail", "Qty Avail"),
 ]
-OUTPUT_HEADERS = [catalog_name for catalog_name, _ in COLUMN_MAP]
+
+# Type is derived from Style; it is not a separate RFMS export field.
+OUTPUT_HEADERS = [catalog_name for catalog_name, _ in COLUMN_MAP] + ["Type"]
+# A Z style is exactly 4 characters: Z plus three letters/digits (ZG91, ZU42).
+Z_STYLE = re.compile(r"^Z[A-Z0-9]{3}$")
 SPECIAL_STYLES = {"SILVER", "GOLD"}
 MINIMUM_ROWS = 1  # Never publish an empty inventory.
 GIT_EXE: str | None = None
@@ -117,7 +123,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     wanted = [rfms_name.lower() for _, rfms_name in COLUMN_MAP]
     indexes = None
     output_rows = []
-    counts = {"SILVER": 0, "GOLD": 0, "Z-prefixed": 0}
+    counts = {"SILVER": 0, "GOLD": 0, "Z-prefixed": 0, "Z longer (left out)": 0}
     excluded = 0
 
     for row in csv.reader(io.StringIO(content), delimiter=delimiter):
@@ -138,15 +144,19 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
         selected = [cells[i] if i < len(cells) else "" for i in indexes]
         style = " ".join(selected[1].split()).upper()
 
-        if style not in SPECIAL_STYLES and not style.startswith("Z"):
+        if style not in SPECIAL_STYLES and not Z_STYLE.match(style):
+            if style.startswith("Z"):
+                counts["Z longer (left out)"] += 1
             excluded += 1
             continue
 
         if style in SPECIAL_STYLES:
             counts[style] += 1
+            inventory_type = "Vinyl"
         else:
             counts["Z-prefixed"] += 1
-        output_rows.append(selected)
+            inventory_type = "Carpet"
+        output_rows.append(selected + [inventory_type])
 
     if indexes is None:
         stop("Could not find a header row containing 'Roll #'. Check that this is the RFMS export.")
@@ -238,7 +248,8 @@ def main() -> None:
     print(f"Filtered rows:        {new_count:,}")
     print(f"  SILVER:             {counts['SILVER']:,}")
     print(f"  GOLD:               {counts['GOLD']:,}")
-    print(f"  Z-prefixed:         {counts['Z-prefixed']:,}")
+    print(f"  Z styles (4 char):  {counts['Z-prefixed']:,}")
+    print(f"  Longer Z left out:  {counts['Z longer (left out)']:,}")
     print(f"  Other styles out:   {excluded:,}")
 
     if old_count and new_count < old_count * 0.5:
@@ -260,9 +271,16 @@ def main() -> None:
 
     shutil.move(str(temp_inventory), str(live_inventory))
 
-    # Stage and commit only inventory.csv; other un-staged files are not included.
-    run_git(repo, "add", "--", "inventory.csv")
-    staged_inventory = run_git(repo, "diff", "--cached", "--quiet", "--", "inventory.csv", check=False)
+    # "Inventory as of" note shown on the catalog: the date/time the RFMS export was saved.
+    # Use Last Modified, not Created: copying the RFMS export from the remote
+    # desktop updates Created/Accessed locally but preserves its Modified time.
+    stamp = datetime.fromtimestamp(source.stat().st_mtime).astimezone()
+    (repo / "inventory_date.txt").write_text(stamp.isoformat(timespec="minutes"), encoding="utf-8")
+    print(f"Inventory as of:      {stamp.strftime('%b %d, %Y %I:%M %p')}")
+
+    # Stage and commit only inventory.csv and inventory_date.txt; other un-staged files are not included.
+    run_git(repo, "add", "--", "inventory.csv", "inventory_date.txt")
+    staged_inventory = run_git(repo, "diff", "--cached", "--quiet", "--", "inventory.csv", "inventory_date.txt", check=False)
 
     if staged_inventory.returncode == 0:
         # RFMS export produced the exact same catalog file. This is a successful

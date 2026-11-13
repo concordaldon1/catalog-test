@@ -16,6 +16,8 @@ input,select,button{font:inherit;padding:10px 12px;border:1px solid var(--line);
 input[type=search]{flex:1 1 200px;min-width:0}
 button{cursor:pointer;background:var(--accent);color:#fff;border-color:var(--accent)}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.asof{margin:0 0 10px;padding:6px 10px;background:var(--accent2);border-left:4px solid var(--accent);border-radius:4px;font-weight:700;font-size:15px}
+.asof.warn{border-left-color:var(--bad);color:var(--bad)}
 .sum{margin:6px 0 0;color:var(--mute);font-size:14px}
 main{max-width:900px;margin:0 auto;padding:12px}
 .grp{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
@@ -45,8 +47,10 @@ img.ph{cursor:zoom-in}
 <body>
 <header>
   <h1>Roll Inventory</h1>
+  <p class="asof" id="asof">Inventory as of: loading…</p>
   <div class="bar">
-    <input id="q" type="search" placeholder="Search style, color, or roll number" aria-label="Search">
+    <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
+    <select id="typ" aria-label="Filter by type" hidden><option value="">Carpet and Vinyl</option></select>
     <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
     <select id="sort" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
   </div>
@@ -94,9 +98,14 @@ function load(text){
     var avail = parseFloat(g('amt avail').replace(/,/g,''));
     if (!(avail > 0) || !g('roll number')) return;
     var k = g('roll number'); if (seen[k]) return; seen[k] = 1;
-    data.push({roll:k, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), avail:avail});
+    data.push({roll:k, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), type:g('type'), avail:avail});
   });
   rows = data;
+  var typSel = document.getElementById('typ'), types = {};
+  data.forEach(function(r){ if (r.type) types[r.type] = 1; });
+  var typeList = Object.keys(types).sort();
+  typSel.innerHTML = '<option value="">' + (typeList.length ? typeList.join(' and ') : 'All types') + '</option>' + typeList.map(function(t){ return '<option>' + esc(t) + '</option>'; }).join('');
+  typSel.hidden = typeList.length < 2;   // only show the filter when the CSV has more than one type
   var sel = document.getElementById('sty'), names = {};
   data.forEach(function(r){ names[r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : '')] = 1; });
   sel.innerHTML = '<option value="">All styles</option>' + Object.keys(names).sort().map(function(n){return '<option>' + esc(n) + '</option>';}).join('');
@@ -110,9 +119,10 @@ function styleLabel(r){ return r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn
 
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
-  var sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
+  var typ = document.getElementById('typ').value, sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
   var groups = {};
   rows.forEach(function(r){
+    if (typ && r.type !== typ) return;
     if (sty && styleLabel(r) !== sty) return;
     var hay = (styleLabel(r) + ' ' + colorLabel(r)).toLowerCase();
     if (q && !q.split(/\s+/).every(function(t){ return hay.indexOf(t) > -1; })) return;
@@ -126,7 +136,7 @@ function render(){
     return (styleLabel(a.r) + colorLabel(a.r)).localeCompare(styleLabel(b.r) + colorLabel(b.r), undefined, {numeric:true});
   });
   var all = 0, n = 0; list.forEach(function(g){ all += g.total; n += g.rolls.length; });
-  document.getElementById('sum').textContent = n + ' rolls, ' + fmt(all) + ' ft in stock';
+  document.getElementById('sum').textContent = 'Total: ' + fmt(all) + ' ft in stock (' + n + (n === 1 ? ' roll)' : ' rolls)');
   var out = document.getElementById('out');
   if (!list.length){ out.innerHTML = '<p class="msg">No rolls match your search.</p>'; return; }
   out.innerHTML = list.slice(0, shown).map(function(g, i){
@@ -136,7 +146,7 @@ function render(){
       '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
       '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
       '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
-      '<div class="tot"><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
+      '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
       '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
       g.rolls.map(function(x){return '<tr><td>' + esc(x.roll) + '</td><td>' + fmt(x.avail) + '</td></tr>';}).join('') +
       '</tbody></table></details></section>';
@@ -166,7 +176,7 @@ function render(){
   });
 }
 
-['q','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
+['q','typ','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
 document.getElementById('q').placeholder = 'Search style or color';
 
 function fallback(){
@@ -184,6 +194,14 @@ outEl.addEventListener('click', function(e){ if (isPhoto(e.target)) openLb(e.tar
 outEl.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key === ' ') && isPhoto(e.target)){ e.preventDefault(); openLb(e.target); } });
 lb.addEventListener('click', closeLb);
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !lb.hidden) closeLb(); });
+
+fetch('inventory_date.txt?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(function(t){
+  var d = new Date(t.trim()), el = document.getElementById('asof');
+  if (isNaN(d)) throw 0;
+  el.textContent = 'Inventory as of: ' + d.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short', timeZoneName:'short'});
+}).catch(function(){
+  var el = document.getElementById('asof'); el.textContent = 'Inventory date unavailable'; el.classList.add('warn');
+});
 
 fetch(CSV_FILE + '?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
 </script>
