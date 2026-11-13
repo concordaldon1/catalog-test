@@ -198,7 +198,14 @@ document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !lb.
 fetch('inventory_date.txt?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(function(t){
   var d = new Date(t.trim()), el = document.getElementById('asof');
   if (isNaN(d)) throw 0;
-  el.textContent = 'Inventory as of: ' + d.toLocaleString(undefined, {dateStyle:'medium', timeStyle:'short', timeZoneName:'short'});
+  el.textContent = 'Inventory as of: ' + d.toLocaleString(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short'
+});
 }).catch(function(){
   var el = document.getElementById('asof'); el.textContent = 'Inventory date unavailable'; el.classList.add('warn');
 });
