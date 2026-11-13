@@ -9,7 +9,9 @@ Workflow:
      updates inventory.csv and inventory_date.txt, commits them, and pushes to origin/main.
 
 Included styles: Style is exactly SILVER or GOLD, or is a 4-character Z style
-(Z plus three letters/digits, like ZG91). Longer styles such as "ZG91 A1C2" are left out.
+(Z plus three letters/digits, like ZG91), except ZL93 and ZL94. Longer styles
+such as "ZL93 RUG MAT" and "ZG91 A1C2" are left out, never truncated.
+Amt Avail is sourced from RFMS Avail Length (feet), not Qty Avail (yardage).
 The source RFMS export is never modified.
 """
 
@@ -32,7 +34,7 @@ COLUMN_MAP = [
     ("Style", "Style"),
     ("Color", "Color"),
     ("Width", "Width"),
-    ("Amt Avail", "Qty Avail"),
+    ("Amt Avail", "Avail Length"),
 ]
 
 # Type is derived from Style; it is not a separate RFMS export field.
@@ -40,6 +42,7 @@ OUTPUT_HEADERS = [catalog_name for catalog_name, _ in COLUMN_MAP] + ["Type"]
 # A Z style is exactly 4 characters: Z plus three letters/digits (ZG91, ZU42).
 Z_STYLE = re.compile(r"^Z[A-Z0-9]{3}$")
 SPECIAL_STYLES = {"SILVER", "GOLD"}
+EXCLUDED_Z_STYLES = {"ZL93", "ZL94"}
 MINIMUM_ROWS = 1  # Never publish an empty inventory.
 GIT_EXE: str | None = None
 
@@ -123,7 +126,13 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     wanted = [rfms_name.lower() for _, rfms_name in COLUMN_MAP]
     indexes = None
     output_rows = []
-    counts = {"SILVER": 0, "GOLD": 0, "Z-prefixed": 0, "Z longer (left out)": 0}
+    counts = {
+        "SILVER": 0,
+        "GOLD": 0,
+        "Z-prefixed": 0,
+        "ZL93/ZL94 (left out)": 0,
+        "Z longer (left out)": 0,
+    }
     excluded = 0
 
     for row in csv.reader(io.StringIO(content), delimiter=delimiter):
@@ -144,7 +153,12 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
         selected = [cells[i] if i < len(cells) else "" for i in indexes]
         style = " ".join(selected[1].split()).upper()
 
-        if style not in SPECIAL_STYLES and not Z_STYLE.match(style):
+        if style in EXCLUDED_Z_STYLES:
+            counts["ZL93/ZL94 (left out)"] += 1
+            excluded += 1
+            continue
+
+        if style not in SPECIAL_STYLES and not Z_STYLE.fullmatch(style):
             if style.startswith("Z"):
                 counts["Z longer (left out)"] += 1
             excluded += 1
@@ -163,7 +177,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     if len(output_rows) < MINIMUM_ROWS:
         stop("The filtered inventory contains no rows. The live inventory was not changed.")
 
-    # Require roll numbers and numeric available amounts on every retained row.
+    # Require roll numbers and numeric available lengths on every retained row.
     roll_index = OUTPUT_HEADERS.index("Roll Number")
     avail_index = OUTPUT_HEADERS.index("Amt Avail")
     bad_rolls = sum(1 for row in output_rows if not row[roll_index].strip())
@@ -179,7 +193,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
             bad_amounts.append(line_number)
     if bad_amounts:
         sample = ", ".join(map(str, bad_amounts[:8]))
-        stop(f"Amt Avail has non-numeric values in output row(s): {sample}")
+        stop(f"Amt Avail (RFMS Avail Length) has non-numeric values in output row(s): {sample}")
 
     with destination.open("w", newline="", encoding="utf-8-sig") as handle:
         writer = csv.writer(handle)
@@ -249,6 +263,7 @@ def main() -> None:
     print(f"  SILVER:             {counts['SILVER']:,}")
     print(f"  GOLD:               {counts['GOLD']:,}")
     print(f"  Z styles (4 char):  {counts['Z-prefixed']:,}")
+    print(f"  ZL93/ZL94 excluded: {counts['ZL93/ZL94 (left out)']:,}")
     print(f"  Longer Z left out:  {counts['Z longer (left out)']:,}")
     print(f"  Other styles out:   {excluded:,}")
 
