@@ -177,10 +177,14 @@ function loadPhoto(img){
     });
     var tries = [], seen = {};
     names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ var file = nm + '.' + e; if (photoFiles.has(file) && !seen[file]){ seen[file] = true; tries.push(file); } }); });
+    var i = 0;
+    function noPhoto(){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); }
+    if (!tries.length){ noPhoto(); return; }
     function next(){
-      var i = +img.dataset.i;
-      if (i >= tries.length){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); return; }
-      img.dataset.i = i + 1; img.src = PHOTO_DIR + encodeURIComponent(tries[i]);
+      if (i >= tries.length){ noPhoto(); return; }
+      var file = tries[i++];
+      if (!file){ noPhoto(); return; }
+      img.src = PHOTO_DIR + encodeURIComponent(file);
     }
     img.onerror = next; next();
 }
