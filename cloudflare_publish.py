@@ -53,12 +53,21 @@ def request(method: str, route: str, body: bytes, content_type: str) -> bytes:
         raise RuntimeError(f"Could not reach Cloudflare: {exc.reason}") from exc
 
 
-def get_public(route: str) -> bytes:
+def get_public(route: str, *, allow_not_found: bool = False) -> bytes | None:
     base_url, _ = load_config()
+    req = Request(
+        base_url + route,
+        headers={
+            "Accept": "*/*",
+            "User-Agent": "Concord-Aldon-Catalog-Publisher/1.0",
+        },
+    )
     try:
-        with urlopen(base_url + route, timeout=60) as response:
+        with urlopen(req, timeout=60) as response:
             return response.read()
     except HTTPError as exc:
+        if allow_not_found and exc.code == 404:
+            return None
         detail = exc.read().decode("utf-8", errors="replace")[:500]
         raise RuntimeError(f"Could not read live catalog (HTTP {exc.code}): {detail}") from exc
     except URLError as exc:
@@ -84,3 +93,4 @@ def upload_photo(filename: str, content: bytes, content_type: str) -> None:
 def publish_manifest(filenames: list[str]) -> None:
     body = (json.dumps(filenames, ensure_ascii=False, indent=2) + "\n").encode("utf-8")
     request("PUT", "/admin/manifest", body, "application/json; charset=utf-8")
+

@@ -249,8 +249,12 @@ def main() -> None:
         stop("There are already staged Git changes. Open GitHub Desktop and commit/publish those first.")
 
     try:
-        old_inventory_text = get_public("/inventory.csv").decode("utf-8-sig")
-        old_date_text = get_public("/inventory_date.txt").decode("utf-8").strip()
+        old_inventory_data = get_public("/inventory.csv", allow_not_found=True)
+        old_date_data = get_public("/inventory_date.txt", allow_not_found=True)
+        # The first deployment has no prior objects in R2. Treat those 404s
+        # as an empty starting catalog so the normal confirmation flow can seed it.
+        old_inventory_text = old_inventory_data.decode("utf-8-sig") if old_inventory_data is not None else ""
+        old_date_text = old_date_data.decode("utf-8").strip() if old_date_data is not None else ""
     except Exception as exc:
         stop(f"Could not read the current Cloudflare catalog: {exc}")
     old_count = count_csv_text(old_inventory_text)
@@ -328,3 +332,4 @@ if __name__ == "__main__":
         print(f"\nUNEXPECTED ERROR: {exc}")
         print("The source RFMS export has not been deleted.")
         raise SystemExit(1)
+
