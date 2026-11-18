@@ -5,8 +5,8 @@ One-click RFMS inventory updater for the Concord Aldon roll catalog.
 Workflow:
   1. Put the RFMS CSV export in the "incoming" folder.
   2. Double-click "Update Inventory.bat".
-  3. This script filters the export, validates it, updates inventory.csv,
-     updates inventory.csv and inventory_date.txt, commits them, and pushes to origin/main.
+  3. This script filters and validates the export, then publishes the approved
+     inventory and export-modified timestamp to Cloudflare.
 
 Included styles: Style is exactly SILVER or GOLD, or is a 4-character Z style
 (Z plus three letters/digits, like ZG91), except ZL93 and ZL94. Longer styles
@@ -26,6 +26,8 @@ import sys
 import os
 from datetime import datetime
 from pathlib import Path
+
+from cloudflare_publish import get_public, publish_inventory
 
 # Catalog columns and their matching RFMS export headers.
 # Style Number and Color Number are not present in this RFMS export.
@@ -203,11 +205,8 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     return len(output_rows), counts, excluded
 
 
-def count_csv_rows(path: Path) -> int:
-    if not path.exists():
-        return 0
-    with path.open("r", newline="", encoding="utf-8-sig") as handle:
-        return max(0, sum(1 for _ in csv.reader(handle)) - 1)
+def count_csv_text(content: str) -> int:
+    return max(0, sum(1 for _ in csv.reader(io.StringIO(content))) - 1)
 
 
 def main() -> None:
@@ -215,7 +214,6 @@ def main() -> None:
     incoming = repo / "incoming"
     processed = incoming / "processed"
     backups = repo / "inventory_backups"
-    live_inventory = repo / "inventory.csv"
     temp_inventory = repo / "inventory_new.csv"
 
     print("=" * 62)
@@ -231,10 +229,6 @@ def main() -> None:
     branch = run_git(repo, "branch", "--show-current").stdout.strip()
     if branch != "main":
         stop(f"The repository is on branch '{branch}', not 'main'. Open the main branch before updating.")
-
-    origin = run_git(repo, "remote", "get-url", "origin").stdout.strip()
-    if not origin:
-        stop("No GitHub 'origin' remote is configured.")
 
     incoming.mkdir(exist_ok=True)
     candidates = [
@@ -254,7 +248,12 @@ def main() -> None:
     if staged.returncode != 0:
         stop("There are already staged Git changes. Open GitHub Desktop and commit/publish those first.")
 
-    old_count = count_csv_rows(live_inventory)
+    try:
+        old_inventory_text = get_public("/inventory.csv").decode("utf-8-sig")
+        old_date_text = get_public("/inventory_date.txt").decode("utf-8").strip()
+    except Exception as exc:
+        stop(f"Could not read the current Cloudflare catalog: {exc}")
+    old_count = count_csv_text(old_inventory_text)
     print(f"Current catalog rows: {old_count:,}")
 
     temp_inventory.unlink(missing_ok=True)
@@ -274,61 +273,47 @@ def main() -> None:
             temp_inventory.unlink(missing_ok=True)
             stop("Cancelled. Your live inventory was left unchanged.", 0)
 
-    answer = input("\nReady to replace inventory.csv and publish to the live catalog. Continue? (Y/N): ").strip().upper()
+    answer = input("\nReady to publish this inventory to the live Cloudflare catalog. Continue? (Y/N): ").strip().upper()
     if answer != "Y":
         temp_inventory.unlink(missing_ok=True)
         stop("Cancelled. Your live inventory was left unchanged.", 0)
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backups.mkdir(exist_ok=True)
-    if live_inventory.exists():
-        shutil.copy2(live_inventory, backups / f"inventory_before_{timestamp}.csv")
-
-    shutil.move(str(temp_inventory), str(live_inventory))
 
     # "Inventory as of" note shown on the catalog: the date/time the RFMS export was saved.
     # Use Last Modified, not Created: copying the RFMS export from the remote
     # desktop updates Created/Accessed locally but preserves its Modified time.
     stamp = datetime.fromtimestamp(source.stat().st_mtime).astimezone()
-    (repo / "inventory_date.txt").write_text(stamp.isoformat(timespec="minutes"), encoding="utf-8")
+    new_date_text = stamp.isoformat(timespec="minutes")
     print(f"Inventory as of:      {stamp.strftime('%b %d, %Y %I:%M %p')}")
 
-    # Stage and commit only inventory.csv and inventory_date.txt; other un-staged files are not included.
-    run_git(repo, "add", "--", "inventory.csv", "inventory_date.txt")
-    staged_inventory = run_git(repo, "diff", "--cached", "--quiet", "--", "inventory.csv", "inventory_date.txt", check=False)
-
-    if staged_inventory.returncode == 0:
-        # RFMS export produced the exact same catalog file. This is a successful
-        # no-op: do not attempt an empty Git commit, but still archive the export.
-        print("\nNo inventory changes detected. The live catalog already matches this RFMS export.")
+    new_inventory_text = temp_inventory.read_text(encoding="utf-8-sig")
+    if new_inventory_text == old_inventory_text and new_date_text == old_date_text:
+        print("\nNo inventory or timestamp changes detected. The live catalog is already up to date.")
+        temp_inventory.unlink(missing_ok=True)
     else:
-        run_git(repo, "commit", "-m", f"Update inventory {timestamp}")
+        backups.mkdir(exist_ok=True)
+        if old_inventory_text:
+            (backups / f"inventory_before_{timestamp}.csv").write_text(
+                old_inventory_text, encoding="utf-8-sig", newline=""
+            )
+        print("\nPublishing inventory and date label to Cloudflare R2...")
+        result = publish_inventory(new_inventory_text, new_date_text)
+        temp_inventory.unlink(missing_ok=True)
+        if result.get("backedUp"):
+            print("Cloudflare saved a backup of the previous inventory in R2.")
 
-        print("\nUploading inventory to GitHub main...")
-        push = run_git(repo, "push", "origin", "main", check=False)
-        if push.returncode != 0:
-            details = push.stderr.strip() or push.stdout.strip()
-            print("\nThe inventory was processed and committed locally, but the push failed.")
-            print("Your previous inventory backup is in inventory_backups.")
-            print("Open GitHub Desktop, sign in if prompted, and click Push origin.")
-            print(f"\nGit message:\n{details}")
-            raise SystemExit(2)
-
-    # Archive the source export after a successful push or a verified no-change run.
+    # Archive the source export after a successful upload or verified no-change run.
     processed.mkdir(parents=True, exist_ok=True)
     archive_target = processed / source.name
     if archive_target.exists():
         archive_target = processed / f"{source.stem}_{timestamp}{source.suffix}"
     shutil.move(str(source), str(archive_target))
 
-    if staged_inventory.returncode == 0:
-        print("\nSUCCESS: No publishing was necessary; the live catalog is already up to date.")
-    else:
-        print("\nSUCCESS: The live catalog inventory has been updated.")
+    print("\nSUCCESS: The live catalog inventory has been checked and published to Cloudflare.")
     print("The RFMS export was archived in incoming\\processed.")
     print("A backup of the previous inventory is in inventory_backups.")
-    if staged_inventory.returncode != 0:
-        print("Allow a minute or two for the website to refresh.")
+    print("The repository's tracked inventory files were not changed or pushed to GitHub.")
 
 
 if __name__ == "__main__":

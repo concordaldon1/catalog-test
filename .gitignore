@@ -1,2 +1,4 @@
 incoming/
 inventory_backups/
+dist/
+__pycache__/

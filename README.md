@@ -1,35 +1,32 @@
-# Concord Aldon RFMS Inventory Updater
+# Concord Aldon RFMS Inventory Catalog
 
-This package updates the inventory data used by the `catalog-test` catalog. The updater keeps the existing validation, backup, confirmation, timestamp, commit, push, and export-archiving workflow.
+The public catalog is served by Cloudflare Pages. Inventory and photos are stored in Cloudflare R2 and are published by the private desktop tools. GitHub stores the website source and deploys code changes; inventory and photos are not part of the Pages build.
 
 ## Package contents
 
-- `update_inventory.py` — filter, validate, back up, update, commit, and publish the inventory.
+- `update_inventory.py` — filter and validate RFMS exports, back up the previous inventory, and publish the approved inventory and export timestamp to Cloudflare.
+- `update_inventory_github.py` — preserved copy of the prior GitHub-publishing updater for reference or rollback; it still pushes inventory to GitHub when run.
+- `cloudflare_configure.py` — creates the private local upload settings and a random upload token.
 - `Update Inventory.bat` — unchanged Windows launcher.
-- `README.md` and `README.txt` — these instructions.
-- `test_filter.py` — isolated synthetic-data check; it does not access Git or change catalog files.
-- `synthetic_rfms.csv` — sample RFMS export used by the check.
+- `Update Inventory - Copy.bat` — existing alternate launcher for the preserved GitHub updater, when present in this checkout.
+- `cloudflare_publish.py` — shared private upload helper used by the desktop tools.
+- `cloudflare/photo_sync_r2.py` — photo sync tool for the Desktop Photo Sync folder.
+- `functions/[[path]].js` — public R2 reads and token-protected upload endpoints.
+- `scripts/build_site.py` — builds a Pages folder containing only `index.html`.
+- `cloudflare/README.md` — Cloudflare resource setup and publishing notes.
 
 ## Install
 
-1. In GitHub Desktop, open the `catalog-test` repository.
-2. Choose **Repository → Show in Explorer**.
-3. Make a copy of the current `update_inventory.py` somewhere safe.
-4. Copy this package's `update_inventory.py` into the repository's root folder and replace the existing updater.
-5. Replace the repository's `README.txt` with this package's `README.txt`. You may also replace `README.md` with this package's `README.md` if you want the online project instructions to match.
-6. Keep the existing `Update Inventory.bat`; the included launcher is identical and optional to copy.
-7. Do not replace `index.html`, `inventory.csv`, `inventory_date.txt`, `.gitignore`, photos, or photo-sync files with package files. The package contains no catalog page or photo files.
-8. To install the updater change in GitHub, inspect the changed files in GitHub Desktop and commit/push them when you are ready. This install step is separate from running an inventory update.
+1. Complete the Cloudflare setup in `cloudflare/README.md` before publishing from the desktop tools.
+2. In GitHub Desktop, open the `catalog-test` repository and choose **Repository → Show in Explorer**.
+3. Keep a copy of your current updater and photo-sync script until the first Cloudflare update and photo sync succeed.
+4. Install `cloudflare_publish.py` in the repository root. Replace the repository's `update_inventory.py` with this version.
+5. Copy `cloudflare_publish.py` and `cloudflare/photo_sync_r2.py` into the Desktop Photo Sync folder, replacing its `photo_sync.py` with `photo_sync_r2.py` renamed to `photo_sync.py`. Keep the existing `photo_sync_config.json` and `Run Photo Sync.bat`.
+6. Configure the local Cloudflare publishing settings as described in `cloudflare/README.md`. The private token must not be committed.
+7. Commit/push the code and README changes through GitHub Desktop. Do not commit `inventory.csv` or photos as part of the Cloudflare deployment setup; Pages builds only `index.html` into `dist/`.
+8. Upload the current photos and inventory to R2 after the Pages project is deployed and its R2 binding and secret are configured.
 
-## Synthetic test
-
-Run this before using the updater with a real export. It writes only a temporary CSV under your system temporary folder and never calls Git, pushes, or changes the catalog.
-
-1. Open PowerShell in the package folder.
-2. Run `py -3 test_filter.py` (or `python test_filter.py` if the Python launcher is unavailable).
-3. Confirm the final line says `PASS`.
-
-The sample has four included rows and excluded examples for ZL93, ZL94, `ZL93 RUG MAT`, `ZG91 A1C2`, and another longer Z style. It also sets `Qty Avail` and `Avail Length` to different values; the test verifies `Amt Avail` is populated from `Avail Length`.
+The Windows inventory launcher continues to run `update_inventory.py` (the Cloudflare version). To use the preserved GitHub workflow temporarily, run `py -3 update_inventory_github.py` manually instead; that version pushes inventory to GitHub.
 
 ## Daily use
 
@@ -37,8 +34,8 @@ The sample has four included rows and excluded examples for ZL93, ZL94, `ZL93 RU
 2. Copy the RFMS CSV export into the repository's `incoming` folder.
 3. Double-click `Update Inventory.bat`.
 4. Review the selected export and row counts. The updater warns if the filtered inventory has fewer than half the current catalog rows.
-5. At the final prompt, type `Y` only when you want to replace the inventory and allow the updater's existing commit-and-push workflow to publish it. Type `N` to leave the live files unchanged.
-6. After a successful push (or verified no-change run), the source export moves into `incoming\processed`.
+5. At the final prompt, type `Y` only when you want to publish the approved data to the live Cloudflare catalog. Type `N` to leave the live catalog unchanged.
+6. After a successful upload (or verified no-change run), the source export moves into `incoming\processed`.
 
 ## Filtering rules
 
@@ -63,7 +60,7 @@ The sample has four included rows and excluded examples for ZL93, ZL94, `ZL93 RU
 
 ## Inventory date
 
-`inventory_date.txt` is written from the RFMS export's file **Last Modified** timestamp, converted to the local time zone. This preserves the existing behavior that displays the export's modified date/time rather than the local copy time.
+The public `inventory_date.txt` is updated from the RFMS export's file **Last Modified** timestamp, converted to the local time zone. The updater does not change the tracked local inventory files or push inventory data to GitHub.
 
 ## Safeguards and Git behavior
 
@@ -71,10 +68,8 @@ The sample has four included rows and excluded examples for ZL93, ZL94, `ZL93 RU
 - The updater requires the repository to be on branch `main` and refuses to proceed if changes are already staged.
 - It validates required headers, nonblank roll numbers, and numeric available lengths.
 - It refuses an empty result and warns if the new inventory is less than half the current row count.
-- It asks before replacing inventory files.
-- It backs up the previous `inventory.csv` in `inventory_backups`.
-- It stages and commits only `inventory.csv` and `inventory_date.txt`.
-- If inventory and timestamp are unchanged, it skips an empty commit and push.
-- If the push fails, the local commit remains available to push through GitHub Desktop.
-- The source export is archived only after a successful push or verified no-change run.
+- It asks before publishing inventory.
+- It saves a local backup and the Pages Function also backs up the prior inventory and date label in R2.
+- If inventory and timestamp are unchanged, it skips the upload.
+- The source export is archived only after a successful upload or verified no-change run.
 - Keep `incoming/` and `inventory_backups/` ignored by Git.
