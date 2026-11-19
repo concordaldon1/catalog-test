@@ -8,11 +8,11 @@ Workflow:
   3. This script filters and validates the export, then publishes the approved
      inventory and export-modified timestamp to Cloudflare.
 
-Included styles: Style is exactly SILVER or GOLD, or is a 4-character Z style
+Included styles: exact SILVER or GOLD, exact CT, or a 4-character Z style
 (Z plus three letters/digits, like ZG91), except ZL93 and ZL94. Longer styles
 such as "ZL93 RUG MAT" and "ZG91 A1C2" are left out, never truncated.
-Amt Avail is sourced from RFMS Avail Length (feet), not Qty Avail (yardage).
-The source RFMS export is never modified.
+Amt Avail is sourced from RFMS Avail Length. It is feet for carpet/vinyl and
+yards for Carpet Tile. The source RFMS export is never modified.
 """
 
 from __future__ import annotations
@@ -134,6 +134,7 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
         "Z-prefixed": 0,
         "ZL93/ZL94 (left out)": 0,
         "Z longer (left out)": 0,
+        "Carpet Tile": 0,
     }
     excluded = 0
 
@@ -160,6 +161,15 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
             excluded += 1
             continue
 
+        if style == "CT":
+            counts["Carpet Tile"] += 1
+            # Carpet Tile stock is quantity by style/color, not a roll or width.
+            selected[0] = ""
+            selected[1] = "CT"
+            selected[3] = ""
+            output_rows.append(selected + ["Carpet Tile"])
+            continue
+
         if style not in SPECIAL_STYLES and not Z_STYLE.fullmatch(style):
             if style.startswith("Z"):
                 counts["Z longer (left out)"] += 1
@@ -182,7 +192,11 @@ def filter_export(source: Path, destination: Path) -> tuple[int, dict[str, int],
     # Require roll numbers and numeric available lengths on every retained row.
     roll_index = OUTPUT_HEADERS.index("Roll Number")
     avail_index = OUTPUT_HEADERS.index("Amt Avail")
-    bad_rolls = sum(1 for row in output_rows if not row[roll_index].strip())
+    type_index = OUTPUT_HEADERS.index("Type")
+    bad_rolls = sum(
+        1 for row in output_rows
+        if row[type_index] != "Carpet Tile" and not row[roll_index].strip()
+    )
     if bad_rolls:
         stop(f"{bad_rolls} included row(s) have a blank Roll Number.")
 
@@ -268,6 +282,7 @@ def main() -> None:
     print(f"  Z styles (4 char):  {counts['Z-prefixed']:,}")
     print(f"  ZL93/ZL94 excluded: {counts['ZL93/ZL94 (left out)']:,}")
     print(f"  Longer Z left out:  {counts['Z longer (left out)']:,}")
+    print(f"  Carpet Tile rows:   {counts['Carpet Tile']:,} (Avail Length in yards)")
     print(f"  Other styles out:   {excluded:,}")
 
     if old_count and new_count < old_count * 0.5:

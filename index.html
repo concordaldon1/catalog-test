@@ -27,6 +27,7 @@ main{max-width:900px;margin:0 auto;padding:12px}
 .meta{color:var(--mute);font-size:14px}
 .tot{margin-left:auto;text-align:right;white-space:nowrap}
 .tot b{display:block;font-size:22px;color:var(--accent)}
+.type-badge{display:inline-block;margin:3px 0;padding:2px 7px;border-radius:999px;background:var(--accent2);color:var(--accent);font-size:12px;font-weight:700}
 details{border-top:1px solid var(--line)}
 summary{padding:10px 12px;cursor:pointer;color:var(--accent);font-weight:600}
 table{width:100%;border-collapse:collapse}
@@ -99,10 +100,12 @@ function load(text){
     if (low.indexOf('roll number') > -1){ head = low; return; }   // handles repeated header rows
     if (!head || r.join('').trim() === '') return;
     function g(n){ var i = head.indexOf(n); return i > -1 ? (r[i]||'').trim() : ''; }
-    var avail = parseFloat(g('amt avail').replace(/,/g,''));
-    if (!(avail > 0) || !g('roll number')) return;
-    var k = g('roll number'); if (seen[k]) return; seen[k] = 1;
-    data.push({roll:k, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), type:g('type'), avail:avail});
+    var avail = parseFloat(g('amt avail').replace(/,/g,'')), type = g('type');
+    if (!(avail > 0)) return;
+    var roll = g('roll number');
+    if (type !== 'Carpet Tile' && !roll) return;
+    if (type !== 'Carpet Tile') { if (seen[roll]) return; seen[roll] = 1; }
+    data.push({roll:roll, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), type:type, avail:avail});
   });
   rows = data;
   var typSel = document.getElementById('typ'), types = {};
@@ -121,6 +124,7 @@ function load(text){
 
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function fmt(n){ return n.toLocaleString(undefined,{maximumFractionDigits:2}); }
+function unitForType(type){ return type === 'Carpet Tile' ? 'yds' : 'ft'; }
 function colorLabel(r){ return r.color && r.cn && r.color !== r.cn ? r.color + ' (' + r.cn + ')' : (r.color || r.cn); }
 function styleLabel(r){ return r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : ''); }
 function naturalCompare(a,b){ return String(a || '').localeCompare(String(b || ''), undefined, {numeric:true, sensitivity:'base'}); }
@@ -160,7 +164,7 @@ function render(){
     if (sty && styleLabel(r) !== sty) return;
     var hay = (styleLabel(r) + ' ' + colorLabel(r)).toLowerCase();
     if (q && !q.split(/\s+/).every(function(t){ return hay.indexOf(t) > -1; })) return;
-    var k = [r.sn || r.style, r.cn || r.color, r.width].join('|');
+    var k = [r.type, r.sn || r.style, r.cn || r.color, r.width].join('|');
     (groups[k] = groups[k] || {r:r, rolls:[], total:0});
     groups[k].rolls.push(r); groups[k].total += r.avail;
   });
@@ -175,21 +179,34 @@ function render(){
     if (sort === 'most' && b.total !== a.total) return b.total - a.total;
     return compareStyleColor(a,b);
   });
-  var all = 0, n = 0; list.forEach(function(g){ all += g.total; n += g.rolls.length; });
-  document.getElementById('sum').textContent = 'Total: ' + fmt(all) + ' ft in stock (' + n + (n === 1 ? ' roll)' : ' rolls)');
+  var totals = {};
+  list.forEach(function(g){
+    var type = g.r.type || 'Carpet';
+    totals[type] = totals[type] || {amount:0, rolls:0};
+    totals[type].amount += g.total;
+    if (type !== 'Carpet Tile') totals[type].rolls += g.rolls.length;
+  });
+  var summary = Object.keys(totals).sort(naturalCompare).map(function(type){
+    var total = type + ': ' + fmt(totals[type].amount) + ' ' + unitForType(type);
+    if (type !== 'Carpet Tile') total += ' (' + totals[type].rolls + (totals[type].rolls === 1 ? ' roll)' : ' rolls)');
+    return total;
+  });
+  document.getElementById('sum').textContent = summary.length ? 'Total: ' + summary.join(' · ') : '';
   var out = document.getElementById('out');
   if (!list.length){ out.innerHTML = '<p class="msg">No listed styles or colors with photos match your search.</p>'; return; }
   out.innerHTML = list.slice(0, shown).map(function(g, i){
-    var r = g.r;
+    var r = g.r, isTile = r.type === 'Carpet Tile', rollCount = g.rolls.length;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
       '<img class="ph" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
       '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
-      '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
-      '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
-      '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
+      '<div class="type-badge">' + esc(r.type || 'Carpet') + '</div>' +
+      '<div class="meta">' + (!isTile && r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
+      '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ' + unitForType(r.type) + '</b>' +
+      (!isTile ? '<span class="meta">' + rollCount + (rollCount === 1 ? ' roll' : ' rolls') + '</span>' : '') + '</div></div>' +
+      (isTile ? '' : '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
       g.rolls.map(function(x){return '<tr><td>' + esc(x.roll) + '</td><td>' + fmt(x.avail) + '</td></tr>';}).join('') +
-      '</tbody></table></details></section>';
+      '</tbody></table></details>') + '</section>';
   }).join('') + (list.length > shown ? '<p class="msg"><button id="more">Show more (' + (list.length - shown) + ' remaining)</button></p>' : '');
   var mb = document.getElementById('more');
   if (mb) mb.onclick = function(){ shown += PAGE_SIZE; render(); };

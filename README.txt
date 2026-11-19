@@ -40,6 +40,7 @@ The Windows inventory launcher continues to run `update_inventory.py` (the Cloud
 ## Filtering rules
 
 - Only exact `GOLD` and `SILVER` styles are included as Type `Vinyl`.
+- Exact `CT` styles are included as Type `Carpet Tile`; their Color value is kept as the RFMS color code.
 - Only exact four-character styles matching `Z` plus three letters or digits are included as Type `Carpet`.
 - `ZL93` and `ZL94` are explicitly excluded, even though they otherwise match the four-character format.
 - Longer values are excluded in full; they are never shortened to a valid prefix. For example, `ZL93 RUG MAT`, `ZG91 A1C2`, and `ZL95 RUG MAT` are excluded.
@@ -54,9 +55,9 @@ The Windows inventory launcher continues to run `update_inventory.py` (the Cloud
 | Color | Color |
 | Width | Width |
 | Amt Avail | Avail Length |
-| Type | Generated from Style (`Vinyl` or `Carpet`) |
+| Type | Generated from Style (`Vinyl`, `Carpet`, or `Carpet Tile`) |
 
-`Amt Avail` remains the catalog output heading and contains feet from `Avail Length`. `Qty Avail` (yardage) is not used.
+`Amt Avail` remains the catalog output heading and comes from RFMS `Avail Length`. Carpet and Vinyl values are feet; Carpet Tile values are yards. Carpet Tile rows have blank Roll Number and Width fields, and the website aggregates them by Style and Color without showing roll details. `Qty Avail` is not used. The website shows each entry's product type and labels totals in feet or yards accordingly. The catalog does not display prices.
 
 ## Inventory date
 
