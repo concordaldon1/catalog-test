@@ -4,34 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Roll Inventory</title>
-<<<<<<< Updated upstream
-=======
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
->>>>>>> Stashed changes
 <style>
 :root{color-scheme:dark;--bg:#111917;--surface:#192320;--elevated:#222e2a;--ink:#e2e8e4;--mute:#9bafa9;--line:#2d3b37;--accent:#56b7ae;--accent-soft:#203632;--bad:#f28b8b;--focus:#8ad8d0}
 *{box-sizing:border-box}
-<<<<<<< Updated upstream
-body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
-header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 14px}
-h1{margin:0 0 8px;font-size:20px;font-weight:700}
-.bar{display:flex;gap:8px;flex-wrap:wrap}
-input,select,button{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
-input[type=search]{flex:1 1 200px;min-width:0}
-button{cursor:pointer;background:var(--accent);color:#fff;border-color:var(--accent)}
-:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.sum{margin:6px 0 0;color:var(--mute);font-size:14px}
-main{max-width:900px;margin:0 auto;padding:12px}
-.grp{background:var(--card);border:1px solid var(--line);border-radius:10px;margin-bottom:12px;overflow:hidden}
-.top{display:flex;gap:12px;padding:12px;align-items:center}
-.ph{width:96px;height:96px;flex:none;border-radius:6px;background:var(--accent2);object-fit:cover;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center}
-.top h2{margin:0;font-size:18px}
-.meta{color:var(--mute);font-size:14px}
-.tot{margin-left:auto;text-align:right;white-space:nowrap}
-.tot b{display:block;font-size:22px;color:var(--accent)}
-=======
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
 header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px}
 .header-inner{max-width:1200px;margin:0 auto}
@@ -61,15 +39,13 @@ main{max-width:1200px;margin:0 auto;padding:14px 16px 28px}
 .ph{width:88px;height:88px;flex:none;border-radius:8px;background:#141d1a;object-fit:contain;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:3px}
 .item-info{min-width:0}
 .top h2{margin:0;font-size:17px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
-.style-number{margin-top:3px;color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
-.style-number,.item-color{overflow-wrap:anywhere}
-.item-color{margin-top:5px;font-size:14px;color:var(--ink)}
+.style-number{margin-top:3px;color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.item-color{margin-top:5px;font-size:14px;color:var(--ink);overflow-wrap:anywhere}
 .item-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
 .meta{color:var(--mute);font-size:13px}
 .tot{min-width:100px;text-align:right;white-space:nowrap}
 .tot b{display:block;font-size:22px;line-height:1.2;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
 .type-badge{display:inline-flex;align-items:center;min-height:24px;padding:2px 8px;border:1px solid #36534c;border-radius:6px;background:var(--accent-soft);color:#a8d8d1;font-size:12px;font-weight:500}
->>>>>>> Stashed changes
 details{border-top:1px solid var(--line)}
 summary{padding:10px 16px;cursor:pointer;color:var(--accent);font-weight:500;transition:background-color .14s ease}
 summary:hover{background:rgba(86,183,174,.07)}
@@ -93,30 +69,22 @@ img.ph{cursor:zoom-in}
 </head>
 <body>
 <header>
-<<<<<<< Updated upstream
-  <h1>Roll Inventory</h1>
-  <div class="bar">
-    <input id="q" type="search" placeholder="Search style, color, or roll number" aria-label="Search">
-    <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
-    <select id="sort" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
-=======
   <div class="header-inner">
     <div class="heading-row">
       <h1>Roll Inventory</h1>
       <p class="asof" id="asof">Inventory as of: loading…</p>
     </div>
     <div class="filters">
-      <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
-      <div class="filter-row">
-        <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
-        <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
-      </div>
+    <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
+    <div class="filter-row">
+    <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
+    <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
+    </div>
     </div>
     <div class="summary-row">
       <p class="sum" id="sum"></p>
-      <select id="sort" class="sort-control" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
+    <select id="sort" class="sort-control" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
     </div>
->>>>>>> Stashed changes
   </div>
 </header>
 <main id="out"><p class="msg">Loading inventory…</p></main>
@@ -129,9 +97,13 @@ img.ph{cursor:zoom-in}
 
 <script>
 // Settings: change these if your file or folder names differ.
-var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_EXT = ['jpg','jpeg','png','webp'];
+var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_MANIFEST = 'photos/manifest.json', PHOTO_EXT = ['jpg','jpeg','png','webp'];
 var PAGE_SIZE = 20;   // style/color entries shown at a time
 var rows = [], shown = PAGE_SIZE;
+var photoFiles = new Set(), searchTimer = null, photoManifestFailed = false;
+var photoObserver = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries){
+  entries.forEach(function(entry){ if (entry.isIntersecting){ photoObserver.unobserve(entry.target); loadPhoto(entry.target); } });
+}, {rootMargin:'250px 0px'}) : null;
 
 function parse(text){
   text = text.replace(/^\uFEFF/, '');
@@ -158,55 +130,104 @@ function load(text){
     if (low.indexOf('roll number') > -1){ head = low; return; }   // handles repeated header rows
     if (!head || r.join('').trim() === '') return;
     function g(n){ var i = head.indexOf(n); return i > -1 ? (r[i]||'').trim() : ''; }
-    var avail = parseFloat(g('amt avail').replace(/,/g,''));
-    if (!(avail > 0) || !g('roll number')) return;
-    var k = g('roll number'); if (seen[k]) return; seen[k] = 1;
-    data.push({roll:k, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), avail:avail});
+    var avail = parseFloat(g('amt avail').replace(/,/g,'')), type = g('type');
+    if (!(avail > 0)) return;
+    var roll = g('roll number');
+    if (type !== 'Carpet Tile' && !roll) return;
+    if (type !== 'Carpet Tile') { if (seen[roll]) return; seen[roll] = 1; }
+    data.push({roll:roll, style:g('style'), sn:g('style number'), color:g('color'), cn:g('color number'), width:g('width'), type:type, avail:avail});
   });
   rows = data;
+  var typSel = document.getElementById('typ'), types = {};
+  var hasPhotoByItem = {};
+  data.forEach(function(r){ if (photoCandidates(r).length) hasPhotoByItem[photoKey(r)] = true; });
+  var listedData = data.filter(function(r){ return hasPhotoByItem[photoKey(r)]; });
+  listedData.forEach(function(r){ if (r.type) types[r.type] = 1; });
+  var typeList = Object.keys(types).sort();
+  typSel.innerHTML = '<option value="">All product types</option>' + typeList.map(function(t){ return '<option>' + esc(t) + '</option>'; }).join('');
+  typSel.hidden = typeList.length < 2;   // only show the filter when the CSV has more than one type
   var sel = document.getElementById('sty'), names = {};
-  data.forEach(function(r){ names[r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : '')] = 1; });
-  sel.innerHTML = '<option value="">All styles</option>' + Object.keys(names).sort().map(function(n){return '<option>' + esc(n) + '</option>';}).join('');
+  listedData.forEach(function(r){ names[r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : '')] = 1; });
+  sel.innerHTML = '<option value="">All styles</option>' + Object.keys(names).sort(naturalCompare).map(function(n){return '<option>' + esc(n) + '</option>';}).join('');
   render();
 }
 
 function esc(s){ return String(s).replace(/[&<>"]/g, function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function fmt(n){ return n.toLocaleString(undefined,{maximumFractionDigits:2}); }
+function unitForType(type){ return type === 'Carpet Tile' ? 'yds' : 'ft'; }
 function colorLabel(r){ return r.color && r.cn && r.color !== r.cn ? r.color + ' (' + r.cn + ')' : (r.color || r.cn); }
 function styleLabel(r){ return r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : ''); }
+function naturalCompare(a,b){ return String(a || '').localeCompare(String(b || ''), undefined, {numeric:true, sensitivity:'base'}); }
+function compareStyleColor(a,b){
+  var result = naturalCompare(styleLabel(a.r), styleLabel(b.r));
+  if (result) return result;
+  result = naturalCompare(colorLabel(a.r), colorLabel(b.r));
+  if (result) return result;
+  return naturalCompare(a.r.width, b.r.width);
+}
+function photoKey(r){ return [r.sn || r.style, r.cn || r.color].join('|'); }
+function photoCandidates(r){
+  var names = [];
+  [r.sn, r.style].forEach(function(prefix){
+    if (!prefix) return;
+    [r.cn, r.color].forEach(function(value){
+      if (value) ['_', '-', ' '].forEach(function(separator){ names.push(prefix + separator + value); });
+    });
+    names.push(prefix);
+  });
+  var tries = [], seen = {};
+  names.forEach(function(name){
+    PHOTO_EXT.forEach(function(ext){
+      var file = name + '.' + ext;
+      if (photoFiles.has(file) && !seen[file]){ seen[file] = true; tries.push(file); }
+    });
+  });
+  return tries;
+}
 
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
-  var sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
+  var typ = document.getElementById('typ').value, sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
   var groups = {};
   rows.forEach(function(r){
+    if (typ && r.type !== typ) return;
     if (sty && styleLabel(r) !== sty) return;
     var hay = (styleLabel(r) + ' ' + colorLabel(r)).toLowerCase();
     if (q && !q.split(/\s+/).every(function(t){ return hay.indexOf(t) > -1; })) return;
-    var k = [r.sn || r.style, r.cn || r.color, r.width].join('|');
+    var k = [r.type, r.sn || r.style, r.cn || r.color, r.width].join('|');
     (groups[k] = groups[k] || {r:r, rolls:[], total:0});
     groups[k].rolls.push(r); groups[k].total += r.avail;
   });
   var list = Object.keys(groups).map(function(k){return groups[k];});
+  list = list.map(function(group){
+    var photoRow = group.rolls.find(function(roll){ return photoCandidates(roll).length > 0; });
+    if (!photoRow) return null;
+    group.r = photoRow;
+    return group;
+  }).filter(Boolean);
   list.sort(function(a,b){
-    if (sort === 'most') return b.total - a.total;
-    return (styleLabel(a.r) + colorLabel(a.r)).localeCompare(styleLabel(b.r) + colorLabel(b.r), undefined, {numeric:true});
+    if (sort === 'most' && b.total !== a.total) return b.total - a.total;
+    return compareStyleColor(a,b);
   });
-  var all = 0, n = 0; list.forEach(function(g){ all += g.total; n += g.rolls.length; });
-  document.getElementById('sum').textContent = n + ' rolls, ' + fmt(all) + ' ft in stock';
+  var totals = {};
+  list.forEach(function(g){
+    var type = g.r.type || 'Carpet';
+    totals[type] = totals[type] || {amount:0, rolls:0};
+    totals[type].amount += g.total;
+    if (type !== 'Carpet Tile') totals[type].rolls += g.rolls.length;
+  });
+  var summary = Object.keys(totals).sort(naturalCompare).map(function(type){
+    var total = type + ': ' + fmt(totals[type].amount) + ' ' + unitForType(type);
+    if (type !== 'Carpet Tile') total += ' (' + totals[type].rolls + (totals[type].rolls === 1 ? ' roll)' : ' rolls)');
+    return total;
+  });
+  document.getElementById('sum').textContent = summary.length ? 'Total: ' + summary.join(' · ') : '';
   var out = document.getElementById('out');
-  if (!list.length){ out.innerHTML = '<p class="msg">No rolls match your search.</p>'; return; }
+  if (!list.length){ out.innerHTML = '<p class="msg">No listed styles or colors with photos match your search.</p>'; return; }
   out.innerHTML = list.slice(0, shown).map(function(g, i){
-    var r = g.r;
+    var r = g.r, isTile = r.type === 'Carpet Tile', rollCount = g.rolls.length;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
-<<<<<<< Updated upstream
-      '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn || r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
-      '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
-      '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
-      '<div class="tot"><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
-      '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
-=======
       '<img class="ph" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
       '<div class="item-info"><h2>' + esc(r.style) + '</h2>' +
       (r.sn && r.sn !== r.style ? '<div class="style-number">' + esc(r.sn) + '</div>' : '') +
@@ -216,28 +237,36 @@ function render(){
       '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ' + unitForType(r.type) + '</b>' +
       (!isTile ? '<span class="meta">' + rollCount + (rollCount === 1 ? ' roll' : ' rolls') + '</span>' : '') + '</div></div>' +
       (isTile ? '' : '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
->>>>>>> Stashed changes
       g.rolls.map(function(x){return '<tr><td>' + esc(x.roll) + '</td><td>' + fmt(x.avail) + '</td></tr>';}).join('') +
-      '</tbody></table></details></section>';
+      '</tbody></table></details>') + '</section>';
   }).join('') + (list.length > shown ? '<p class="msg"><button id="more">Show more (' + (list.length - shown) + ' remaining)</button></p>' : '');
   var mb = document.getElementById('more');
   if (mb) mb.onclick = function(){ shown += PAGE_SIZE; render(); };
   Array.prototype.forEach.call(out.querySelectorAll('img.ph'), function(img){
-    var s = img.dataset.s, c = img.dataset.c, n = img.dataset.n, names = [];
-    // Photo names tried in order, e.g. BEAR_121.jpg, BEAR-121.jpg, BEAR 121.jpg, BEAR_MILLSTONE.jpg ... then BEAR.jpg
-    [c, n].forEach(function(x){ if (x) ['_', '-', ' '].forEach(function(sep){ names.push(s + sep + x); }); });
-    names.push(s);
-    var tries = []; names.forEach(function(nm){ PHOTO_EXT.forEach(function(e){ tries.push(nm + '.' + e); }); });
-    function next(){
-      var i = +img.dataset.i;
-      if (i >= tries.length){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); return; }
-      img.dataset.i = i + 1; img.src = PHOTO_DIR + encodeURIComponent(tries[i]);
-    }
-    img.onerror = next; next();
+    if (photoObserver) photoObserver.observe(img); else loadPhoto(img);
   });
 }
 
-['q','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
+function loadPhoto(img){
+    var tries = photoCandidates({sn:img.dataset.s,style:img.dataset.style,cn:img.dataset.c,color:img.dataset.n});
+    var i = 0;
+    function noPhoto(){ var d = document.createElement('div'); d.className = 'ph'; d.textContent = 'No photo'; img.replaceWith(d); }
+    if (!tries.length){ noPhoto(); return; }
+    function next(){
+      if (i >= tries.length){ noPhoto(); return; }
+      var file = tries[i++];
+      if (!file){ noPhoto(); return; }
+      img.src = PHOTO_DIR + encodeURIComponent(file);
+    }
+    img.onerror = next; next();
+}
+
+function scheduleSearch(){
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(function(){ shown = PAGE_SIZE; render(); }, 250);
+}
+document.getElementById('q').addEventListener('input', scheduleSearch);
+['typ','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
 document.getElementById('q').placeholder = 'Search style or color';
 
 function fallback(){
@@ -256,7 +285,31 @@ outEl.addEventListener('keydown', function(e){ if ((e.key === 'Enter' || e.key =
 lb.addEventListener('click', closeLb);
 document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !lb.hidden) closeLb(); });
 
-fetch(CSV_FILE + '?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
+fetch('inventory_date.txt?t=' + Date.now()).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(function(t){
+  var d = new Date(t.trim()), el = document.getElementById('asof');
+  if (isNaN(d)) throw 0;
+  el.textContent = 'Inventory as of: ' + d.toLocaleString(undefined, {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: 'numeric',
+  minute: '2-digit',
+  timeZoneName: 'short'
+});
+}).catch(function(){
+  var el = document.getElementById('asof'); el.textContent = 'Inventory date unavailable'; el.classList.add('warn');
+});
+
+fetch(PHOTO_MANIFEST).then(function(r){ if (!r.ok) throw 0; return r.json(); }).then(function(files){
+  if (!Array.isArray(files)) throw 0;
+  photoFiles = new Set(files);
+}).catch(function(){ photoFiles = new Set(); photoManifestFailed = true; }).then(function(){
+  if (photoManifestFailed){
+    document.getElementById('out').innerHTML = '<p class="msg err">The photo list is unavailable, so inventory entries cannot be matched to photos. Please try again later.</p>';
+    return;
+  }
+  return fetch(CSV_FILE, {cache:'no-cache'}).then(function(r){ if (!r.ok) throw 0; return r.text(); }).then(load).catch(fallback);
+});
 </script>
 </body>
 </html>
