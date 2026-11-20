@@ -4,10 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Roll Inventory</title>
+<<<<<<< Updated upstream
+=======
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+>>>>>>> Stashed changes
 <style>
-:root{--bg:#f3f5f4;--card:#fff;--ink:#1c2a2a;--mute:#5d6c6b;--line:#d9e0de;--accent:#0f5c57;--accent2:#e4efed;--bad:#9b2c2c}
-@media (prefers-color-scheme:dark){:root{--bg:#121a1a;--card:#1a2424;--ink:#e8efee;--mute:#9bb0ae;--line:#2c3a3a;--accent:#59c2b9;--accent2:#1f3533;--bad:#f28b8b}}
+:root{color-scheme:dark;--bg:#111917;--surface:#192320;--elevated:#222e2a;--ink:#e2e8e4;--mute:#9bafa9;--line:#2d3b37;--accent:#56b7ae;--accent-soft:#203632;--bad:#f28b8b;--focus:#8ad8d0}
 *{box-sizing:border-box}
+<<<<<<< Updated upstream
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Trebuchet MS","Segoe UI",system-ui,sans-serif}
 header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 14px}
 h1{margin:0 0 8px;font-size:20px;font-weight:700}
@@ -25,32 +31,93 @@ main{max-width:900px;margin:0 auto;padding:12px}
 .meta{color:var(--mute);font-size:14px}
 .tot{margin-left:auto;text-align:right;white-space:nowrap}
 .tot b{display:block;font-size:22px;color:var(--accent)}
+=======
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px}
+.header-inner{max-width:1200px;margin:0 auto}
+.heading-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+h1{margin:0;font-size:21px;line-height:1.2;font-weight:600;letter-spacing:-.02em}
+.asof{flex:none;margin:0;color:var(--mute);font-size:12px;line-height:1.3;font-weight:400}
+.asof.warn{color:var(--bad)}
+.filters{display:grid;gap:8px;margin-top:10px}
+.filter-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+#typ[hidden]+#sty{grid-column:1/-1}
+input,select,button{min-height:44px;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--elevated);color:var(--ink);transition:border-color .14s ease,background-color .14s ease}
+input[type=search]{width:100%;min-width:0}
+input::placeholder{color:var(--mute);opacity:.85}
+select{min-width:0;cursor:pointer}
+input:hover,select:hover{border-color:#49635c}
+button{cursor:pointer;background:var(--accent);color:#10201d;border-color:var(--accent);font-weight:600}
+button:hover{background:#70c9c0;border-color:#70c9c0}
+button:active{background:#3f9991;transform:translateY(1px)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.summary-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:8px}
+.sum{margin:0;color:var(--mute);font-size:13px;line-height:1.4;font-variant-numeric:tabular-nums}
+.sort-control{width:190px}
+main{max-width:1200px;margin:0 auto;padding:14px 16px 28px}
+.grp{background:var(--surface);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;transition:border-color .14s ease,background-color .14s ease}
+.grp:hover{border-color:#40554e;background:#1b2622}
+.top{display:grid;grid-template-columns:88px minmax(0,1fr) minmax(100px,auto);gap:14px;padding:14px 16px;align-items:center}
+.ph{width:88px;height:88px;flex:none;border-radius:8px;background:#141d1a;object-fit:contain;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:3px}
+.item-info{min-width:0}
+.top h2{margin:0;font-size:17px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
+.style-number{margin-top:3px;color:var(--mute);font-size:13px;font-variant-numeric:tabular-nums}
+.style-number,.item-color{overflow-wrap:anywhere}
+.item-color{margin-top:5px;font-size:14px;color:var(--ink)}
+.item-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:7px}
+.meta{color:var(--mute);font-size:13px}
+.tot{min-width:100px;text-align:right;white-space:nowrap}
+.tot b{display:block;font-size:22px;line-height:1.2;font-weight:600;color:var(--accent);font-variant-numeric:tabular-nums}
+.type-badge{display:inline-flex;align-items:center;min-height:24px;padding:2px 8px;border:1px solid #36534c;border-radius:6px;background:var(--accent-soft);color:#a8d8d1;font-size:12px;font-weight:500}
+>>>>>>> Stashed changes
 details{border-top:1px solid var(--line)}
-summary{padding:10px 12px;cursor:pointer;color:var(--accent);font-weight:600}
+summary{padding:10px 16px;cursor:pointer;color:var(--accent);font-weight:500;transition:background-color .14s ease}
+summary:hover{background:rgba(86,183,174,.07)}
 table{width:100%;border-collapse:collapse}
-td,th{padding:8px 12px;text-align:left;border-top:1px solid var(--line)}
-th{font-size:13px;color:var(--mute);font-weight:600}
+td,th{padding:9px 16px;text-align:left;border-top:1px solid var(--line);font-variant-numeric:tabular-nums}
+th{font-size:12px;color:var(--mute);font-weight:500}
 td:last-child,th:last-child{text-align:right}
-.msg{padding:20px;text-align:center;color:var(--mute)}
+.msg{padding:24px 16px;text-align:center;color:var(--mute)}
 .err{color:var(--bad)}
 img.ph{cursor:zoom-in}
-#lb{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.9);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;cursor:zoom-out}
+#lb{position:fixed;inset:0;z-index:20;background:rgba(8,13,12,.94);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:12px;cursor:zoom-out}
 #lb[hidden]{display:none}
-#lbimg{max-width:96vw;max-height:84vh;object-fit:contain;border-radius:6px}
-#lbcap{color:#fff;font-size:16px;text-align:center}
-#lbx{position:absolute;top:10px;right:12px;font-size:22px;line-height:1;padding:8px 12px;background:rgba(255,255,255,.15);border-color:transparent}
-@media(max-width:480px){.ph{width:72px;height:72px}.tot b{font-size:19px}}
+#lbimg{max-width:96vw;max-height:84vh;object-fit:contain;border:1px solid var(--line);border-radius:8px}
+#lbcap{color:var(--ink);font-size:14px;text-align:center}
+#lbx{position:absolute;top:10px;right:12px;font-size:22px;line-height:1;padding:8px 12px;background:var(--elevated);border-color:var(--line);color:var(--ink)}
+@media(min-width:900px){main{padding-top:18px}}
+@media(max-width:520px){header{padding:11px 12px}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.top{grid-template-columns:88px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:12px}.ph{width:88px;height:88px}.tot{min-width:82px}.tot b{font-size:19px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}.sum{font-size:12px}summary{padding:10px 12px}td,th{padding:9px 12px}}
+@media(max-width:360px){.top{grid-template-columns:76px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:10px}.ph{width:76px;height:76px}.tot{min-width:74px}.tot b{font-size:18px}.sort-control{width:138px}}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
+<<<<<<< Updated upstream
   <h1>Roll Inventory</h1>
   <div class="bar">
     <input id="q" type="search" placeholder="Search style, color, or roll number" aria-label="Search">
     <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
     <select id="sort" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
+=======
+  <div class="header-inner">
+    <div class="heading-row">
+      <h1>Roll Inventory</h1>
+      <p class="asof" id="asof">Inventory as of: loading…</p>
+    </div>
+    <div class="filters">
+      <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
+      <div class="filter-row">
+        <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
+        <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
+      </div>
+    </div>
+    <div class="summary-row">
+      <p class="sum" id="sum"></p>
+      <select id="sort" class="sort-control" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
+    </div>
+>>>>>>> Stashed changes
   </div>
-  <p class="sum" id="sum"></p>
 </header>
 <main id="out"><p class="msg">Loading inventory…</p></main>
 
@@ -133,11 +200,23 @@ function render(){
     var r = g.r;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
+<<<<<<< Updated upstream
       '<img class="ph" alt="" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn || r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '" data-i="0">' +
       '<div><h2>' + esc(styleLabel(r)) + '</h2><div>' + esc(colorLabel(r)) + '</div>' +
       '<div class="meta">' + (r.width ? esc(r.width) + '\u2032 wide' : '') + '</div></div>' +
       '<div class="tot"><b>' + fmt(g.total) + ' ft</b><span class="meta">' + g.rolls.length + (g.rolls.length === 1 ? ' roll' : ' rolls') + '</span></div></div>' +
       '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
+=======
+      '<img class="ph" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
+      '<div class="item-info"><h2>' + esc(r.style) + '</h2>' +
+      (r.sn && r.sn !== r.style ? '<div class="style-number">' + esc(r.sn) + '</div>' : '') +
+      '<div class="item-color">' + esc(colorLabel(r)) + '</div>' +
+      '<div class="item-meta"><span class="type-badge">' + esc(r.type || 'Carpet') + '</span>' +
+      (!isTile && r.width ? '<span class="meta">' + esc(r.width) + '\u2032 wide</span>' : '') + '</div></div>' +
+      '<div class="tot"><span class="meta">Total</span><b>' + fmt(g.total) + ' ' + unitForType(r.type) + '</b>' +
+      (!isTile ? '<span class="meta">' + rollCount + (rollCount === 1 ? ' roll' : ' rolls') + '</span>' : '') + '</div></div>' +
+      (isTile ? '' : '<details><summary>Show rolls</summary><table><thead><tr><th>Roll Number</th><th>Amt Avail (ft)</th></tr></thead><tbody>' +
+>>>>>>> Stashed changes
       g.rolls.map(function(x){return '<tr><td>' + esc(x.roll) + '</td><td>' + fmt(x.avail) + '</td></tr>';}).join('') +
       '</tbody></table></details></section>';
   }).join('') + (list.length > shown ? '<p class="msg"><button id="more">Show more (' + (list.length - shown) + ' remaining)</button></p>' : '');
