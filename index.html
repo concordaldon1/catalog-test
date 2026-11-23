@@ -14,6 +14,10 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 "Roboto","Segoe UI",system-ui,sans-serif}
 header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding:12px 14px}
 h1{margin:0 0 8px;font-size:20px;font-weight:700}
+.brand-banner{display:flex;align-items:center;gap:10px;margin:-12px -14px 10px;padding:8px 14px;background:var(--accent2);border-bottom:1px solid var(--line)}
+.brand-mark{display:grid;place-items:center;width:32px;height:32px;flex:none;border-radius:5px;background:var(--accent);color:#fff;font-size:12px;font-weight:700}
+.brand-name{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:.04em;text-transform:uppercase}
+.brand-caption{margin-left:8px;color:var(--mute);font-size:12px}
 .bar{display:flex;gap:8px;flex-wrap:wrap}
 input,select,button{font:inherit;padding:10px 12px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--ink)}
 input[type=search]{flex:1 1 200px;min-width:0}
@@ -50,12 +54,17 @@ img.ph{cursor:zoom-in}
 </head>
 <body>
 <header>
+  <div class="brand-banner">
+    <span class="brand-mark" aria-hidden="true">CM</span>
+    <span><span class="brand-name">Carpetmarts America</span><span class="brand-caption">Flooring Inventory</span></span>
+  </div>
   <h1>Roll Inventory</h1>
   <p class="asof" id="asof">Inventory as of: loading…</p>
   <div class="bar">
     <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
     <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
     <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
+    <select id="wdt" aria-label="Filter by product width"><option value="">All widths</option></select>
     <select id="sort" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
   </div>
   <p class="sum" id="sum"></p>
@@ -72,7 +81,7 @@ img.ph{cursor:zoom-in}
 // Settings: change these if your file or folder names differ.
 var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_MANIFEST = 'photos/manifest.json', PHOTO_EXT = ['jpg','jpeg','png','webp'];
 var PAGE_SIZE = 20;   // style/color entries shown at a time
-var rows = [], shown = PAGE_SIZE;
+var rows = [], listedRows = [], shown = PAGE_SIZE;
 var photoFiles = new Set(), searchTimer = null, photoManifestFailed = false;
 var photoObserver = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries){
   entries.forEach(function(entry){ if (entry.isIntersecting){ photoObserver.unobserve(entry.target); loadPhoto(entry.target); } });
@@ -115,13 +124,12 @@ function load(text){
   var hasPhotoByItem = {};
   data.forEach(function(r){ if (photoCandidates(r).length) hasPhotoByItem[photoKey(r)] = true; });
   var listedData = data.filter(function(r){ return hasPhotoByItem[photoKey(r)]; });
+  listedRows = listedData;
   listedData.forEach(function(r){ if (r.type) types[r.type] = 1; });
   var typeList = Object.keys(types).sort();
   typSel.innerHTML = '<option value="">All product types</option>' + typeList.map(function(t){ return '<option>' + esc(t) + '</option>'; }).join('');
   typSel.hidden = typeList.length < 2;   // only show the filter when the CSV has more than one type
-  var sel = document.getElementById('sty'), names = {};
-  listedData.forEach(function(r){ names[r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : '')] = 1; });
-  sel.innerHTML = '<option value="">All styles</option>' + Object.keys(names).sort(naturalCompare).map(function(n){return '<option>' + esc(n) + '</option>';}).join('');
+  refreshDependentFilters();
   render();
 }
 
@@ -131,6 +139,35 @@ function unitForType(type){ return type === 'Carpet Tile' ? 'yds' : 'ft'; }
 function colorLabel(r){ return r.color && r.cn && r.color !== r.cn ? r.color + ' (' + r.cn + ')' : (r.color || r.cn); }
 function styleLabel(r){ return r.style + (r.sn && r.sn !== r.style ? ' (' + r.sn + ')' : ''); }
 function naturalCompare(a,b){ return String(a || '').localeCompare(String(b || ''), undefined, {numeric:true, sensitivity:'base'}); }
+function uniqueSorted(values){
+  var unique = {};
+  values.forEach(function(value){ if (value) unique[value] = 1; });
+  return Object.keys(unique).sort(naturalCompare);
+}
+function refreshDependentFilters(resetStyleAndWidth){
+  var typeSel = document.getElementById('typ'), styleSel = document.getElementById('sty'), widthSel = document.getElementById('wdt');
+  if (resetStyleAndWidth){ styleSel.value = ''; widthSel.value = ''; }
+  var type = typeSel.value, style = styleSel.value, width = widthSel.value;
+  function matching(skip){
+    return listedRows.filter(function(r){
+      if (skip !== 'type' && type && r.type !== type) return false;
+      if (skip !== 'style' && style && styleLabel(r) !== style) return false;
+      if (skip !== 'width' && width && String(r.width || '').trim() !== width) return false;
+      return true;
+    });
+  }
+  var validStyles = uniqueSorted(matching('style').map(styleLabel));
+  if (style && validStyles.indexOf(style) < 0){ style = ''; styleSel.value = ''; }
+  var validWidths = uniqueSorted(matching('width').map(function(r){return String(r.width || '').trim();}));
+  if (width && validWidths.indexOf(width) < 0){ width = ''; widthSel.value = ''; }
+  var styles = uniqueSorted(matching('style').map(styleLabel));
+  var widths = uniqueSorted(matching('width').map(function(r){return String(r.width || '').trim();}));
+  styleSel.innerHTML = '<option value="">All styles</option>' + styles.map(function(value){ return '<option value="' + esc(value) + '">' + esc(value) + '</option>'; }).join('');
+  widthSel.innerHTML = '<option value="">All widths</option>' + widths.map(function(value){ return '<option value="' + esc(value) + '">' + esc(value) + '\u2032</option>'; }).join('');
+  styleSel.value = style;
+  widthSel.value = width;
+  widthSel.disabled = widths.length === 0;
+}
 function compareStyleColor(a,b){
   var result = naturalCompare(styleLabel(a.r), styleLabel(b.r));
   if (result) return result;
@@ -160,11 +197,12 @@ function photoCandidates(r){
 
 function render(){
   var q = document.getElementById('q').value.trim().toLowerCase();
-  var typ = document.getElementById('typ').value, sty = document.getElementById('sty').value, sort = document.getElementById('sort').value;
+  var typ = document.getElementById('typ').value, sty = document.getElementById('sty').value, width = document.getElementById('wdt').value, sort = document.getElementById('sort').value;
   var groups = {};
   rows.forEach(function(r){
     if (typ && r.type !== typ) return;
     if (sty && styleLabel(r) !== sty) return;
+    if (width && String(r.width || '').trim() !== width) return;
     var hay = (styleLabel(r) + ' ' + colorLabel(r)).toLowerCase();
     if (q && !q.split(/\s+/).every(function(t){ return hay.indexOf(t) > -1; })) return;
     var k = [r.type, r.sn || r.style, r.cn || r.color, r.width].join('|');
@@ -237,7 +275,9 @@ function scheduleSearch(){
   searchTimer = setTimeout(function(){ shown = PAGE_SIZE; render(); }, 250);
 }
 document.getElementById('q').addEventListener('input', scheduleSearch);
-['typ','sty','sort'].forEach(function(id){ document.getElementById(id).addEventListener('input', function(){ shown = PAGE_SIZE; render(); }); });
+document.getElementById('typ').addEventListener('change', function(){ refreshDependentFilters(true); shown = PAGE_SIZE; render(); });
+['sty','wdt'].forEach(function(id){ document.getElementById(id).addEventListener('change', function(){ refreshDependentFilters(false); shown = PAGE_SIZE; render(); }); });
+document.getElementById('sort').addEventListener('change', function(){ shown = PAGE_SIZE; render(); });
 document.getElementById('q').placeholder = 'Search style or color';
 
 function fallback(){
