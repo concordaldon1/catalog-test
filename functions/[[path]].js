@@ -75,7 +75,10 @@ export async function onRequest(context) {
   if (path.startsWith("/admin/")) {
     if (request.method !== "PUT") return new Response("Method not allowed", { status: 405 });
     const provided = request.headers.get(TOKEN_HEADER)?.replace(/^Bearer\s+/i, "") || "";
-    if (!equalToken(provided, env.CATALOG_UPLOAD_TOKEN)) return new Response("Unauthorized", { status: 401 });
+    const isInventoryUpload = path === "/admin/inventory";
+    const authorized = equalToken(provided, env.CATALOG_UPLOAD_TOKEN) ||
+      (isInventoryUpload && equalToken(provided, env.CATALOG_INVENTORY_UPLOAD_TOKEN));
+    if (!authorized) return new Response("Unauthorized", { status: 401 });
 
     if (path === "/admin/inventory") {
       let payload;
