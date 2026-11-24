@@ -11,6 +11,7 @@
 :root{color-scheme:dark;--bg:#111917;--surface:#192320;--elevated:#222e2a;--ink:#e2e8e4;--mute:#9bafa9;--line:#2d3b37;--accent:#56b7ae;--accent-soft:#203632;--bad:#f28b8b;--focus:#8ad8d0}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
+body.drawer-open{overflow:hidden}
 header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px}
 .header-inner{max-width:1280px;margin:0 auto}
 .brand-banner{display:flex;align-items:center;gap:10px;margin-bottom:12px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--accent-soft)}
@@ -23,6 +24,8 @@ h1{margin:0;font-size:21px;line-height:1.2;font-weight:600;letter-spacing:-.02em
 .filters{display:grid;gap:8px;margin-top:10px}
 .filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 #typ[hidden]+#sty{grid-column:auto}
+#style-picker-trigger{display:none;align-items:center;justify-content:space-between;gap:8px;min-width:0;text-align:left;background:var(--elevated);color:var(--ink);border-color:var(--line);font-weight:400}
+#style-picker-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 input,select,button{min-height:44px;font:inherit;padding:9px 12px;border:1px solid var(--line);border-radius:9px;background:var(--elevated);color:var(--ink);transition:border-color .14s ease,background-color .14s ease}
 input[type=search]{width:100%;min-width:0}
 input::placeholder{color:var(--mute);opacity:.85}
@@ -39,7 +42,7 @@ main{max-width:1280px;margin:0 auto;padding:16px 16px 32px;display:grid;grid-tem
 .grp{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:0;overflow:hidden;transition:border-color .14s ease,background-color .14s ease}
 .grp:hover{border-color:#40554e;background:#1b2622}
 .top{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px}
-.ph{width:min(100%,220px);height:220px;flex:none;align-self:center;border-radius:9px;background:#141d1a;object-fit:cover;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:0}
+.ph{width:100%;height:220px;flex:none;align-self:center;border-radius:9px;background:#141d1a;object-fit:contain;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:0}
 .item-info{min-width:0}
 .top h2{margin:0;font-size:18px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
 .style-number{margin-top:4px;color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -66,10 +69,23 @@ img.ph{cursor:zoom-in}
 #lbimg{max-width:96vw;max-height:84vh;object-fit:contain;border:1px solid var(--line);border-radius:8px}
 #lbcap{color:var(--ink);font-size:14px;text-align:center}
 #lbx{position:absolute;top:10px;right:12px;font-size:22px;line-height:1;padding:8px 12px;background:var(--elevated);border-color:var(--line);color:var(--ink)}
+.style-drawer[hidden]{display:none}
+.style-drawer{position:fixed;inset:0;z-index:30;display:flex;justify-content:flex-end}
+.style-drawer-scrim{position:absolute;inset:0;border:0;border-radius:0;background:rgba(5,10,9,.68);padding:0}
+.style-drawer-panel{position:relative;display:flex;flex-direction:column;width:min(88vw,380px);height:100%;background:var(--surface);border-left:1px solid var(--line);box-shadow:-12px 0 32px rgba(0,0,0,.28);transform:translateX(100%);transition:transform .18s ease}
+.style-drawer.open .style-drawer-panel{transform:translateX(0)}
+.style-drawer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px;border-bottom:1px solid var(--line)}
+.style-drawer-heading h2{margin:0;font-size:18px;font-weight:600}
+.style-drawer-close{min-width:44px;padding:8px 12px;background:var(--elevated);color:var(--ink);border-color:var(--line)}
+.style-drawer-options{overflow:auto;padding:8px 12px 24px;overscroll-behavior:contain}
+.style-option{display:flex;align-items:center;justify-content:space-between;width:100%;min-height:48px;padding:10px 12px;border:0;border-bottom:1px solid var(--line);border-radius:0;background:transparent;color:var(--ink);text-align:left;font-weight:400}
+.style-option:hover{background:var(--elevated);border-color:var(--line)}
+.style-option[aria-selected="true"]{background:var(--accent-soft);color:var(--accent);font-weight:600}
+.style-option-mark{color:var(--accent);font-size:18px}
 @media(min-width:900px){main{padding-top:18px}}
 @media(max-width:1100px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){main{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:520px){header{padding:11px 12px}.brand-banner{margin-bottom:10px}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#wdt{grid-column:1/-1}.sum{font-size:12px}summary{padding:11px 12px}td,th{padding:9px 12px}}
+@media(max-width:520px){header{padding:11px 12px}.brand-banner{margin-bottom:10px}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}.sum{font-size:12px}summary{padding:11px 12px}td,th{padding:9px 12px}}
 @media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}.sort-control{width:138px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
@@ -87,6 +103,7 @@ img.ph{cursor:zoom-in}
     <div class="filter-row">
     <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
     <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
+    <button id="style-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="style-drawer" aria-expanded="false"><span id="style-picker-label">All styles</span><span aria-hidden="true">›</span></button>
     <select id="wdt" aria-label="Filter by product width"><option value="">All widths</option></select>
     </div>
     </div>
@@ -102,6 +119,14 @@ img.ph{cursor:zoom-in}
   <button id="lbx" aria-label="Close">&times;</button>
   <img id="lbimg" alt="">
   <div id="lbcap"></div>
+</div>
+
+<div id="style-drawer" class="style-drawer" hidden>
+  <button class="style-drawer-scrim" type="button" aria-label="Close style picker"></button>
+  <section class="style-drawer-panel" role="dialog" aria-modal="true" aria-labelledby="style-drawer-title" tabindex="-1">
+    <div class="style-drawer-heading"><h2 id="style-drawer-title">Choose a style</h2><button id="style-drawer-close" class="style-drawer-close" type="button" aria-label="Close style picker">&times;</button></div>
+    <div id="style-drawer-options" class="style-drawer-options" role="listbox" aria-label="Available styles"></div>
+  </section>
 </div>
 
 <script>
@@ -171,6 +196,10 @@ function distinctSorted(values){
   values.forEach(function(value){ value = String(value || '').trim(); if (value) found[value] = 1; });
   return Object.keys(found).sort(naturalCompare);
 }
+function syncStyleTrigger(){
+  var select = document.getElementById('sty'), option = select.options[select.selectedIndex];
+  document.getElementById('style-picker-label').textContent = option ? option.textContent : 'All styles';
+}
 function refreshDependentFilters(reset){
   var typeSel = document.getElementById('typ'), styleSel = document.getElementById('sty'), widthSel = document.getElementById('wdt');
   if (reset){ styleSel.value = ''; widthSel.value = ''; }
@@ -193,6 +222,31 @@ function refreshDependentFilters(reset){
   styleSel.value = style;
   widthSel.value = width;
   widthSel.disabled = widths.length === 0;
+  syncStyleTrigger();
+}
+function populateStyleDrawer(){
+  var select = document.getElementById('sty'), current = select.value;
+  document.getElementById('style-drawer-options').innerHTML = Array.prototype.map.call(select.options, function(option){
+    var selected = option.value === current;
+    return '<button type="button" class="style-option" role="option" aria-selected="' + selected + '" data-style-value="' + esc(option.value) + '"><span>' + esc(option.textContent) + '</span><span class="style-option-mark" aria-hidden="true">' + (selected ? '✓' : '') + '</span></button>';
+  }).join('');
+}
+function openStyleDrawer(){
+  var drawer = document.getElementById('style-drawer');
+  populateStyleDrawer();
+  drawer.hidden = false;
+  document.getElementById('style-picker-trigger').setAttribute('aria-expanded', 'true');
+  document.body.classList.add('drawer-open');
+  requestAnimationFrame(function(){ drawer.classList.add('open'); document.getElementById('style-drawer-close').focus(); });
+}
+function closeStyleDrawer(){
+  var drawer = document.getElementById('style-drawer');
+  if (drawer.hidden) return;
+  drawer.classList.remove('open');
+  document.getElementById('style-picker-trigger').setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('drawer-open');
+  setTimeout(function(){ if (!drawer.classList.contains('open')) drawer.hidden = true; }, 180);
+  document.getElementById('style-picker-trigger').focus();
 }
 function compareStyleColor(a,b){
   var result = naturalCompare(styleLabel(a.r), styleLabel(b.r));
@@ -306,6 +360,26 @@ document.getElementById('q').addEventListener('input', scheduleSearch);
 document.getElementById('typ').addEventListener('change', function(){ refreshDependentFilters(true); shown = PAGE_SIZE; render(); });
 ['sty','wdt'].forEach(function(id){ document.getElementById(id).addEventListener('change', function(){ refreshDependentFilters(false); shown = PAGE_SIZE; render(); }); });
 document.getElementById('sort').addEventListener('change', function(){ shown = PAGE_SIZE; render(); });
+document.getElementById('style-picker-trigger').addEventListener('click', openStyleDrawer);
+document.getElementById('style-drawer-close').addEventListener('click', closeStyleDrawer);
+document.querySelector('.style-drawer-scrim').addEventListener('click', closeStyleDrawer);
+document.getElementById('style-drawer-options').addEventListener('click', function(event){
+  var option = event.target.closest('.style-option');
+  if (!option) return;
+  var select = document.getElementById('sty');
+  select.value = option.getAttribute('data-style-value');
+  select.dispatchEvent(new Event('change', {bubbles:true}));
+  closeStyleDrawer();
+});
+document.querySelector('.style-drawer-panel').addEventListener('keydown', function(event){
+  if (event.key !== 'Tab') return;
+  var focusable = this.querySelectorAll('button:not([disabled])');
+  if (!focusable.length) return;
+  var first = focusable[0], last = focusable[focusable.length - 1];
+  if (event.shiftKey && document.activeElement === first){ event.preventDefault(); last.focus(); }
+  else if (!event.shiftKey && document.activeElement === last){ event.preventDefault(); first.focus(); }
+});
+document.addEventListener('keydown', function(event){ if (event.key === 'Escape' && !document.getElementById('style-drawer').hidden) closeStyleDrawer(); });
 document.getElementById('q').placeholder = 'Search style or color';
 
 function fallback(){
