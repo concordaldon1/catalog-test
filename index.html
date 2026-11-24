@@ -42,7 +42,8 @@ main{max-width:1280px;margin:0 auto;padding:16px 16px 32px;display:grid;grid-tem
 .grp{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:0;overflow:hidden;transition:border-color .14s ease,background-color .14s ease}
 .grp:hover{border-color:#40554e;background:#1b2622}
 .top{display:flex;flex-direction:column;align-items:stretch;gap:10px;padding:16px}
-.ph{width:100%;height:220px;flex:none;align-self:center;border-radius:9px;background:#141d1a;object-fit:contain;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:0}
+.ph{width:min(100%,220px);height:220px;flex:none;align-self:center;border-radius:9px;background:#141d1a;object-fit:cover;object-position:center;display:flex;align-items:center;justify-content:center;color:var(--mute);font-size:12px;text-align:center;padding:0}
+.ph.wide-preview{width:100%;object-fit:contain}
 .item-info{min-width:0}
 .top h2{margin:0;font-size:18px;line-height:1.25;font-weight:600;letter-spacing:-.01em}
 .style-number{margin-top:4px;color:var(--mute);font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -85,8 +86,8 @@ img.ph{cursor:zoom-in}
 @media(min-width:900px){main{padding-top:18px}}
 @media(max-width:1100px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){main{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:520px){header{padding:11px 12px}.brand-banner{margin-bottom:10px}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}.sum{font-size:12px}summary{padding:11px 12px}td,th{padding:9px 12px}}
-@media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}.sort-control{width:138px}}
+@media(max-width:520px){header{padding:11px 12px}.brand-banner{margin-bottom:10px}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.ph.wide-preview{width:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}.sum{font-size:12px}summary{padding:11px 12px}td,th{padding:9px 12px}}
+@media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.ph.wide-preview{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}.sort-control{width:138px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
@@ -132,7 +133,8 @@ img.ph{cursor:zoom-in}
 <script>
 // Settings: change these if your file or folder names differ.
 var CSV_FILE = 'inventory.csv', PHOTO_DIR = 'photos/', PHOTO_MANIFEST = 'photos/manifest.json', PHOTO_EXT = ['jpg','jpeg','png','webp'];
-var PAGE_SIZE = 20;   // style/color entries shown at a time
+function pageSizeForViewport(){ return window.innerWidth > 1100 ? 21 : 20; }
+var PAGE_SIZE = pageSizeForViewport();   // fills rows for the current desktop column count
 var rows = [], listedRows = [], shown = PAGE_SIZE;
 var photoFiles = new Set(), searchTimer = null, photoManifestFailed = false;
 var photoObserver = 'IntersectionObserver' in window ? new IntersectionObserver(function(entries){
@@ -319,7 +321,7 @@ function render(){
     var r = g.r, isTile = r.type === 'Carpet Tile', rollCount = g.rolls.length;
     g.rolls.sort(function(a,b){return b.avail - a.avail;});
     return '<section class="grp"><div class="top">' +
-      '<img class="ph" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
+      '<img class="ph' + (r.type === 'Vinyl' ? ' wide-preview' : '') + '" alt="" loading="lazy" tabindex="0" title="Click to enlarge" data-t="' + esc(styleLabel(r) + ' \u2013 ' + colorLabel(r)) + '" data-s="' + esc(r.sn) + '" data-style="' + esc(r.style) + '" data-c="' + esc(r.cn) + '" data-n="' + esc(r.color) + '">' +
       '<div class="item-info"><h2>' + esc(r.style) + '</h2>' +
       (r.sn && r.sn !== r.style ? '<div class="style-number">' + esc(r.sn) + '</div>' : '') +
       '<div class="item-color">' + esc(colorLabel(r)) + '</div>' +
@@ -360,6 +362,13 @@ document.getElementById('q').addEventListener('input', scheduleSearch);
 document.getElementById('typ').addEventListener('change', function(){ refreshDependentFilters(true); shown = PAGE_SIZE; render(); });
 ['sty','wdt'].forEach(function(id){ document.getElementById(id).addEventListener('change', function(){ refreshDependentFilters(false); shown = PAGE_SIZE; render(); }); });
 document.getElementById('sort').addEventListener('change', function(){ shown = PAGE_SIZE; render(); });
+window.addEventListener('resize', function(){
+  var nextPageSize = pageSizeForViewport();
+  if (nextPageSize === PAGE_SIZE) return;
+  PAGE_SIZE = nextPageSize;
+  shown = Math.max(PAGE_SIZE, Math.ceil(shown / PAGE_SIZE) * PAGE_SIZE);
+  render();
+});
 document.getElementById('style-picker-trigger').addEventListener('click', openStyleDrawer);
 document.getElementById('style-drawer-close').addEventListener('click', closeStyleDrawer);
 document.querySelector('.style-drawer-scrim').addEventListener('click', closeStyleDrawer);
