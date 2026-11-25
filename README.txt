@@ -74,7 +74,3 @@ The public `inventory_date.txt` is updated from the RFMS export's file **Last Mo
 - If inventory and timestamp are unchanged, it skips the upload.
 - The source export is archived only after a successful upload or verified no-change run.
 - Keep `incoming/` and `inventory_backups/` ignored by Git.
-
-## Test branch snapshot
-
-The `test` branch carries the RFMS inventory snapshot from the export modified November 19, 2026, for local and preview review. `update_inventory.py` remains restricted to `main` because it publishes to the production R2 catalog; do not run it from `test`.
