@@ -13,16 +13,20 @@
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Inter",system-ui,-apple-system,"Segoe UI",sans-serif}
 body.drawer-open{overflow:hidden;-webkit-user-select:none;user-select:none}
 body.drawer-open *{-webkit-user-select:none;user-select:none}
-header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:12px 16px}
-.header-inner{max-width:1280px;margin:0 auto}
-.brand-banner{display:flex;align-items:center;gap:12px;width:100vw;max-height:88px;min-height:64px;margin:-12px calc(50% - 50vw) 12px;padding:12px max(16px,calc((100vw - 1280px)/2 + 16px));overflow:hidden;border:0;border-radius:0;background:var(--accent-soft);transition:max-height .2s ease,min-height .2s ease,padding .2s ease,margin .2s ease,opacity .16s ease}
+header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:0 0 12px}
+.header-inner{max-width:1312px;margin:0 auto;padding:12px 16px 0}
+.brand-banner{display:flex;align-items:center;gap:12px;width:100%;max-height:88px;min-height:64px;margin:0 0 12px;padding:12px max(16px,calc((100vw - 1280px)/2 + 16px));overflow:hidden;border:0;border-radius:0;background:var(--accent-soft);transition:max-height .2s ease,min-height .2s ease,padding .2s ease,margin .2s ease,opacity .16s ease}
 .brand-mark{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:0;background:#0d625c;color:#fff;font-size:14px;font-weight:700}
 .brand-name{font-size:16px;font-weight:600;letter-spacing:.05em}
 .heading-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
 h1{margin:0;font-size:21px;line-height:1.2;font-weight:600;letter-spacing:-.02em}
 .asof{flex:none;margin:0;color:var(--mute);font-size:12px;line-height:1.3;font-weight:400}
 .asof.warn{color:var(--bad)}
-.filters{display:grid;gap:8px;margin-top:10px}
+.filters{display:grid;grid-template-columns:minmax(0,1fr) 190px;grid-template-rows:44px auto;gap:8px;margin-top:10px;max-height:240px;overflow:hidden;opacity:1;visibility:visible;transition:max-height .2s ease,margin .2s ease,opacity .16s ease,visibility 0s linear}
+#q{grid-column:1;grid-row:1}
+#sort{grid-column:2;grid-row:1;width:100%}
+.filter-row{grid-column:1/-1;grid-row:2}
+header.filters-collapsed .filters{max-height:0;margin-top:0;opacity:0;visibility:hidden;pointer-events:none;transition:max-height .2s ease,margin .2s ease,opacity .16s ease,visibility 0s linear .2s}
 .filter-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
 #typ[hidden]+#sty{grid-column:auto}
 #style-picker-trigger{display:none;align-items:center;justify-content:space-between;gap:8px;min-width:0;text-align:left;background:var(--elevated);color:var(--ink);border-color:var(--line);font-weight:400}
@@ -36,8 +40,7 @@ button{cursor:pointer;background:var(--accent);color:#10201d;border-color:var(--
 button:hover{background:#70c9c0;border-color:#70c9c0}
 button:active{background:#3f9991;transform:translateY(1px)}
 :focus-visible{outline:2px solid var(--focus);outline-offset:2px}
-.summary-row{display:flex;justify-content:flex-end;align-items:center;margin-top:8px}
-.sort-control{width:190px}
+.sort-control{width:100%}
 main{max-width:1280px;margin:0 auto;padding:16px 16px 32px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px;align-items:stretch}
 .grp{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:12px;margin:0;overflow:hidden;transition:border-color .14s ease,background-color .14s ease}
 .grp:hover{border-color:#40554e;background:#1b2622}
@@ -86,30 +89,28 @@ img.ph{cursor:zoom-in}
 @media(min-width:900px){main{padding-top:18px}}
 @media(max-width:1100px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){main{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:520px){header{padding:11px 12px}.brand-banner{min-height:56px;max-height:72px;margin-top:-11px;margin-bottom:10px;padding:10px 12px;gap:10px}.brand-mark{width:36px;height:36px}.brand-name{font-size:15px}.brand-collapsed .brand-banner{min-height:0;max-height:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;opacity:0}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.ph.wide-preview{width:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.sort-control{width:150px;font-size:13px;padding-left:9px;padding-right:22px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}summary{padding:11px 12px}td,th{padding:9px 12px}}
-@media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.ph.wide-preview{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}.sort-control{width:138px}}
+@media(max-width:520px){header{padding:0 0 10px}.header-inner{padding:11px 12px 0}.brand-banner{min-height:56px;max-height:72px;margin-bottom:10px;padding:10px 12px;gap:10px}.brand-mark{width:36px;height:36px}.brand-name{font-size:15px}.brand-collapsed .brand-banner{min-height:0;max-height:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;opacity:0}.filters{grid-template-columns:minmax(0,1fr);grid-template-rows:44px auto 44px}.filters #q{grid-column:1;grid-row:1}.filters #sort{grid-column:1;grid-row:3;width:100%;font-size:14px;padding-left:12px;padding-right:12px}.filters .filter-row{grid-column:1;grid-row:2}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.ph.wide-preview{width:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}summary{padding:11px 12px}td,th{padding:9px 12px}}
+@media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.ph.wide-preview{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
 </head>
 <body>
 <header>
+  <div class="brand-banner" aria-label="Carpetmarts America"><span class="brand-mark" aria-hidden="true">CM</span><span class="brand-name">CARPETMARTS AMERICA</span></div>
   <div class="header-inner">
-    <div class="brand-banner" aria-label="Carpetmarts America"><span class="brand-mark" aria-hidden="true">CM</span><span class="brand-name">CARPETMARTS AMERICA</span></div>
     <div class="heading-row">
       <h1>Roll Inventory</h1>
       <p class="asof" id="asof">Inventory as of: loading…</p>
     </div>
     <div class="filters">
     <input id="q" type="search" placeholder="Search style or color" aria-label="Search">
+    <select id="sort" class="sort-control" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
     <div class="filter-row">
     <select id="typ" aria-label="Filter by type" hidden><option value="">All product types</option></select>
     <select id="sty" aria-label="Filter by style"><option value="">All styles</option></select>
     <button id="style-picker-trigger" type="button" aria-haspopup="dialog" aria-controls="style-drawer" aria-expanded="false"><span id="style-picker-label">All styles</span><span aria-hidden="true">›</span></button>
     <select id="wdt" aria-label="Filter by product width"><option value="">All widths</option></select>
     </div>
-    </div>
-    <div class="summary-row">
-      <select id="sort" class="sort-control" aria-label="Sort"><option value="name">Sort: Style / Color</option><option value="most">Sort: Most in stock</option></select>
     </div>
   </div>
 </header>
@@ -355,19 +356,45 @@ window.addEventListener('resize', function(){
   shown = Math.max(PAGE_SIZE, Math.ceil(shown / PAGE_SIZE) * PAGE_SIZE);
   render();
 });
-var brandHeader = document.querySelector('header'), brandCollapseFrame = false;
-function updateBrandCollapse(){
-  if (brandCollapseFrame) return;
-  brandCollapseFrame = true;
+var brandHeader = document.querySelector('header'), headerMotionFrame = false, lastScrollPosition = window.scrollY, touchStartY = null;
+function setFiltersCollapsed(collapsed){ brandHeader.classList.toggle('filters-collapsed', collapsed); }
+function syncBrandCollapse(){
+  var mobile = window.matchMedia('(max-width:520px)').matches;
+  brandHeader.classList.toggle('brand-collapsed', mobile && window.scrollY > 48);
+}
+function handleWindowScroll(){
+  if (headerMotionFrame) return;
+  headerMotionFrame = true;
   requestAnimationFrame(function(){
-    var mobile = window.matchMedia('(max-width:520px)').matches;
-    brandHeader.classList.toggle('brand-collapsed', mobile && window.scrollY > 48);
-    brandCollapseFrame = false;
+    var current = window.scrollY;
+    if (current > lastScrollPosition) setFiltersCollapsed(true);
+    else if (current < lastScrollPosition) setFiltersCollapsed(false);
+    lastScrollPosition = current;
+    syncBrandCollapse();
+    headerMotionFrame = false;
   });
 }
-window.addEventListener('scroll', updateBrandCollapse, {passive:true});
-window.addEventListener('resize', updateBrandCollapse);
-updateBrandCollapse();
+window.addEventListener('scroll', handleWindowScroll, {passive:true});
+window.addEventListener('wheel', function(event){
+  if (event.target.closest && event.target.closest('input,select,button')) return;
+  if (event.deltaY > 0) setFiltersCollapsed(true);
+  else if (event.deltaY < 0) setFiltersCollapsed(false);
+}, {passive:true});
+window.addEventListener('touchstart', function(event){
+  if (!document.getElementById('style-drawer').hidden || event.touches.length !== 1 || (event.target.closest && event.target.closest('input,select,button'))){ touchStartY = null; return; }
+  touchStartY = event.touches[0].clientY;
+}, {passive:true});
+window.addEventListener('touchmove', function(event){
+  if (touchStartY === null || event.touches.length !== 1 || !document.getElementById('style-drawer').hidden) return;
+  var currentY = event.touches[0].clientY, movement = touchStartY - currentY;
+  if (movement > 3) setFiltersCollapsed(true);
+  else if (movement < 0) setFiltersCollapsed(false);
+  touchStartY = currentY;
+}, {passive:true});
+window.addEventListener('touchend', function(){ touchStartY = null; }, {passive:true});
+window.addEventListener('resize', syncBrandCollapse);
+setFiltersCollapsed(window.scrollY > 48);
+syncBrandCollapse();
 document.getElementById('style-picker-trigger').addEventListener('click', openStyleDrawer);
 document.getElementById('style-drawer-close').addEventListener('click', closeStyleDrawer);
 document.querySelector('.style-drawer-scrim').addEventListener('click', closeStyleDrawer);
