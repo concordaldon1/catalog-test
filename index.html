@@ -15,7 +15,7 @@ body.drawer-open{overflow:hidden;-webkit-user-select:none;user-select:none}
 body.drawer-open *{-webkit-user-select:none;user-select:none}
 header{position:sticky;top:0;z-index:5;background:var(--surface);border-bottom:1px solid var(--line);padding:0 0 12px}
 .header-inner{max-width:1312px;margin:0 auto;padding:12px 16px 0}
-.brand-banner{display:flex;align-items:center;gap:12px;width:100%;max-height:88px;min-height:64px;margin:0 0 12px;padding:12px max(16px,calc((100vw - 1280px)/2 + 16px));overflow:hidden;border:0;border-radius:0;background:var(--accent-soft);transition:max-height .2s ease,min-height .2s ease,padding .2s ease,margin .2s ease,opacity .16s ease}
+.brand-banner{display:flex;align-items:center;gap:12px;width:100%;min-height:64px;margin:0 0 12px;padding:12px max(16px,calc((100vw - 1280px)/2 + 16px));border:0;border-radius:0;background:var(--accent-soft)}
 .brand-mark{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:0;background:#0d625c;color:#fff;font-size:14px;font-weight:700}
 .brand-name{font-size:16px;font-weight:600;letter-spacing:.05em}
 .heading-row{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
@@ -89,7 +89,7 @@ img.ph{cursor:zoom-in}
 @media(min-width:900px){main{padding-top:18px}}
 @media(max-width:1100px){main{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){main{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:520px){header{padding:0 0 10px}.header-inner{padding:11px 12px 0}.brand-banner{min-height:56px;max-height:72px;margin-bottom:10px;padding:10px 12px;gap:10px}.brand-mark{width:36px;height:36px}.brand-name{font-size:15px}.brand-collapsed .brand-banner{min-height:0;max-height:0;margin-top:0;margin-bottom:0;padding-top:0;padding-bottom:0;opacity:0}.filters{grid-template-columns:minmax(0,1fr);grid-template-rows:44px auto 44px}.filters #q{grid-column:1;grid-row:1}.filters #sort{grid-column:1;grid-row:3;width:100%;font-size:14px;padding-left:12px;padding-right:12px}.filters .filter-row{grid-column:1;grid-row:2}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.ph.wide-preview{width:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}summary{padding:11px 12px}td,th{padding:9px 12px}}
+@media(max-width:520px){header{padding:0 0 10px}.header-inner{padding:11px 12px 0}.brand-banner{min-height:56px;margin-bottom:10px;padding:10px 12px;gap:10px}.brand-mark{width:36px;height:36px}.brand-name{font-size:15px}.filters{grid-template-columns:minmax(0,1fr);grid-template-rows:44px auto 44px}.filters #q{grid-column:1;grid-row:1}.filters #sort{grid-column:1;grid-row:3;width:100%;font-size:14px;padding-left:12px;padding-right:12px}.filters .filter-row{grid-column:1;grid-row:2}.heading-row{align-items:center}h1{font-size:20px}.asof{max-width:52%;text-align:right}main{padding:12px 10px 24px}.grp{display:block}.top{display:grid;grid-template-columns:92px minmax(0,1fr) minmax(82px,auto);gap:10px;padding:14px}.ph{width:92px;height:92px;object-fit:cover}.ph.wide-preview{width:92px;object-fit:cover}.tot{display:block;min-width:82px;text-align:right}.tot .meta:first-child,.tot b{display:block;text-align:right}.tot b{font-size:20px}.filter-row{grid-template-columns:repeat(2,minmax(0,1fr))}.filter-row select{font-size:14px;padding-left:8px;padding-right:22px}#sty{display:none}#style-picker-trigger{display:flex;font-size:14px;padding-left:8px;padding-right:10px}#wdt{grid-column:1/-1}summary{padding:11px 12px}td,th{padding:9px 12px}}
 @media(max-width:360px){.top{grid-template-columns:80px minmax(0,1fr) minmax(74px,auto);gap:8px;padding:12px}.ph{width:80px;height:80px}.ph.wide-preview{width:80px;height:80px}.tot{min-width:74px}.tot b{font-size:18px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important}}
 </style>
@@ -356,45 +356,72 @@ window.addEventListener('resize', function(){
   shown = Math.max(PAGE_SIZE, Math.ceil(shown / PAGE_SIZE) * PAGE_SIZE);
   render();
 });
-var brandHeader = document.querySelector('header'), headerMotionFrame = false, lastScrollPosition = window.scrollY, touchStartY = null;
-function setFiltersCollapsed(collapsed){ brandHeader.classList.toggle('filters-collapsed', collapsed); }
-function syncBrandCollapse(){
-  var mobile = window.matchMedia('(max-width:520px)').matches;
-  brandHeader.classList.toggle('brand-collapsed', mobile && window.scrollY > 48);
+var brandHeader = document.querySelector('header');
+var headerIsCollapsed = false, headerIntentDirection = 0, headerIntentDistance = 0;
+var lastHeaderIntentAt = 0, lastScrollPosition = window.scrollY, ignoreScrollUntil = 0, directInputUntil = 0;
+var touchStartY = null;
+var COLLAPSE_DISTANCE = 18, REVEAL_DISTANCE = 8, INTENT_RESET_MS = 220;
+function setHeaderCollapsed(collapsed){
+  if (headerIsCollapsed === collapsed) return;
+  headerIsCollapsed = collapsed;
+  brandHeader.classList.toggle('filters-collapsed', collapsed);
+  headerIntentDirection = 0;
+  headerIntentDistance = 0;
+  ignoreScrollUntil = performance.now() + 320;
+  lastScrollPosition = window.scrollY;
+}
+function recordHeaderMovement(delta){
+  if (Math.abs(delta) < .5) return;
+  var now = performance.now(), direction = delta > 0 ? 1 : -1;
+  if (now - lastHeaderIntentAt > INTENT_RESET_MS || direction !== headerIntentDirection){
+    headerIntentDirection = direction;
+    headerIntentDistance = 0;
+  }
+  lastHeaderIntentAt = now;
+  headerIntentDistance += Math.abs(delta);
+  var threshold = headerIsCollapsed ? REVEAL_DISTANCE : COLLAPSE_DISTANCE;
+  if (headerIntentDistance >= threshold){
+    headerIntentDistance = 0;
+    setHeaderCollapsed(direction > 0);
+  }
 }
 function handleWindowScroll(){
-  if (headerMotionFrame) return;
-  headerMotionFrame = true;
-  requestAnimationFrame(function(){
-    var current = window.scrollY;
-    if (current > lastScrollPosition) setFiltersCollapsed(true);
-    else if (current < lastScrollPosition) setFiltersCollapsed(false);
-    lastScrollPosition = current;
-    syncBrandCollapse();
-    headerMotionFrame = false;
-  });
+  var current = window.scrollY, delta = current - lastScrollPosition;
+  lastScrollPosition = current;
+  if (current <= 2 && delta < 0){
+    headerIntentDirection = 0;
+    headerIntentDistance = 0;
+    setHeaderCollapsed(false);
+    return;
+  }
+  var now = performance.now();
+  if (now < ignoreScrollUntil || now < directInputUntil) return;
+  recordHeaderMovement(delta);
 }
+function isHeaderControl(target){ return target && target.closest && target.closest('input,select,button'); }
+function drawerIsOpen(){ return !document.getElementById('style-drawer').hidden; }
 window.addEventListener('scroll', handleWindowScroll, {passive:true});
 window.addEventListener('wheel', function(event){
-  if (event.target.closest && event.target.closest('input,select,button')) return;
-  if (event.deltaY > 0) setFiltersCollapsed(true);
-  else if (event.deltaY < 0) setFiltersCollapsed(false);
+  if (drawerIsOpen() || isHeaderControl(event.target)) return;
+  directInputUntil = performance.now() + 180;
+  recordHeaderMovement(event.deltaY);
 }, {passive:true});
 window.addEventListener('touchstart', function(event){
-  if (!document.getElementById('style-drawer').hidden || event.touches.length !== 1 || (event.target.closest && event.target.closest('input,select,button'))){ touchStartY = null; return; }
+  if (drawerIsOpen() || event.touches.length !== 1 || isHeaderControl(event.target)){ touchStartY = null; return; }
   touchStartY = event.touches[0].clientY;
 }, {passive:true});
 window.addEventListener('touchmove', function(event){
-  if (touchStartY === null || event.touches.length !== 1 || !document.getElementById('style-drawer').hidden) return;
+  if (touchStartY === null || event.touches.length !== 1 || drawerIsOpen()) return;
   var currentY = event.touches[0].clientY, movement = touchStartY - currentY;
-  if (movement > 3) setFiltersCollapsed(true);
-  else if (movement < 0) setFiltersCollapsed(false);
+  if (Math.abs(movement) >= .5){
+    directInputUntil = performance.now() + 180;
+    recordHeaderMovement(movement);
+  }
   touchStartY = currentY;
 }, {passive:true});
-window.addEventListener('touchend', function(){ touchStartY = null; }, {passive:true});
-window.addEventListener('resize', syncBrandCollapse);
-setFiltersCollapsed(window.scrollY > 48);
-syncBrandCollapse();
+window.addEventListener('touchend', function(){ touchStartY = null; headerIntentDirection = 0; headerIntentDistance = 0; }, {passive:true});
+window.addEventListener('touchcancel', function(){ touchStartY = null; headerIntentDirection = 0; headerIntentDistance = 0; }, {passive:true});
+setHeaderCollapsed(window.scrollY > 48);
 document.getElementById('style-picker-trigger').addEventListener('click', openStyleDrawer);
 document.getElementById('style-drawer-close').addEventListener('click', closeStyleDrawer);
 document.querySelector('.style-drawer-scrim').addEventListener('click', closeStyleDrawer);
