@@ -11,7 +11,6 @@ This setup publishes only `index.html` through Pages. Inventory, its modified-ti
 5. In **Settings → Bindings**, add an R2 bucket binding named `CATALOG_BUCKET` pointing to the bucket. Save and redeploy for the binding to take effect.
 6. After the first Pages deployment, open PowerShell in the repository and run `py -3 cloudflare_configure.py`. Enter the production `pages.dev` URL. The script saves local settings outside the repository and prints a random token.
 7. In **Settings → Variables and Secrets**, add a secret named `CATALOG_UPLOAD_TOKEN` and paste that token. Save and redeploy.
-   For a separate RFMS-only admin uploader, add another secret named `CATALOG_INVENTORY_UPLOAD_TOKEN` and share that token privately. The Pages Function accepts it only for `/admin/inventory`; it cannot upload photos or change the photo manifest. Deploy the function code before using this token.
 8. Copy `cloudflare_publish.py` and `cloudflare/photo_sync_r2.py` into the Desktop Photo Sync folder; rename `photo_sync_r2.py` to `photo_sync.py`. Keep its existing `photo_sync_config.json` and `Run Photo Sync.bat`.
 9. Upload the current inventory by running `Update Inventory.bat`. Upload current photos by running `Run Photo Sync.bat`. Both programs ask before publishing.
 
